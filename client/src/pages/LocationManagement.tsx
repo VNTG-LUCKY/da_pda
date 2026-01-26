@@ -6,11 +6,15 @@ import './LocationManagement.css'
 interface TableRow {
   date: string
   time: string
-  material: string
   batchNumber: string
+  materialCode: string
   quantity: string
-  sequence: string
-  location: string
+  orderNumber: string
+  orderLine: string
+  rackType: string
+  rackNumber: string
+  rackTypeCode: string
+  rackNumberCode: string
 }
 
 interface RackType {
@@ -34,6 +38,7 @@ function LocationManagement() {
   const [loadingRackNumber, setLoadingRackNumber] = useState('')
   const [barcode, setBarcode] = useState('')
   const [cnt, setCnt] = useState('0')
+  const [quantitySum, setQuantitySum] = useState('0')
   const [status, setStatus] = useState<'normal' | 'quantity-change'>('normal')
   const [quantity, setQuantity] = useState('')
   const [tableData, setTableData] = useState<TableRow[]>([])
@@ -41,6 +46,7 @@ function LocationManagement() {
   const [rackNumbers, setRackNumbers] = useState<RackNumber[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingRackNumbers, setLoadingRackNumbers] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // 적재대구분 목록 조회
@@ -159,14 +165,226 @@ function LocationManagement() {
     fetchRackNumbers()
   }, [loadingRackType])
 
+  // 테이블 데이터 변경 시 CNT(행 수)와 본수 합계 자동 계산
+  useEffect(() => {
+    // 행 수 계산
+    const rowCount = tableData.length
+    setCnt(String(rowCount))
+
+    // 본수 합계 계산
+    const sum = tableData.reduce((total, row) => {
+      const qty = parseFloat(row.quantity) || 0
+      return total + qty
+    }, 0)
+    setQuantitySum(String(sum))
+  }, [tableData])
+
   const handleInput = () => {
-    // 바코드 입력 처리 로직
-    console.log('바코드 입력:', barcode)
+    // 적재대구분과 적재대번호가 선택되었는지 확인
+    if (!loadingRackType || !loadingRackNumber) {
+      setError('적재대구분과 적재대번호를 먼저 선택해주세요.')
+      return
+    }
+
+    // 바코드가 입력되었는지 확인
+    if (!barcode || barcode.trim() === '') {
+      setError('바코드를 입력해주세요.')
+      return
+    }
+
+    // 바코드 형식 검증 및 파싱
+    // 형식: 배치번호-자재코드-본수-수주번호-수주행번
+    // 예: HG00160205-DS100179-0180-15400-1
+    const barcodeParts = barcode.trim().split('-')
+    
+    if (barcodeParts.length !== 5) {
+      setError('바코드 형식이 올바르지 않습니다. (형식: 배치번호-자재코드-본수-수주번호-수주행번)')
+      return
+    }
+
+    const [batchNumber, materialCode, quantityStr, orderNumber, orderLine] = barcodeParts
+
+    // 중복 체크: 동일한 배치번호와 자재코드가 이미 테이블에 있는지 확인
+    const isDuplicate = tableData.some(
+      (row) => row.batchNumber === batchNumber && row.materialCode === materialCode
+    )
+
+    if (isDuplicate) {
+      setError('이미 적재위치에 등록된 배치번호입니다')
+      // 바코드 입력 필드 초기화
+      setBarcode('')
+      // 바코드 입력 필드로 포커스 이동
+      if (barcodeInputRef.current) {
+        setTimeout(() => {
+          barcodeInputRef.current?.focus()
+        }, 0)
+      }
+      return
+    }
+
+    // 현재 날짜와 시간 가져오기
+    const now = new Date()
+    
+    // 날짜 포맷: YYYY-MM-DD
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const formattedDate = `${year}-${month}-${day}`
+    
+    // 시간 포맷: HH:MM:SS
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const formattedTime = `${hours}:${minutes}:${seconds}`
+
+    // 본수 처리: 본수변경 모드이고 quantity가 입력되어 있으면 그것을 사용, 아니면 바코드의 본수 사용
+    const finalQuantity = (status === 'quantity-change' && quantity.trim() !== '') 
+      ? quantity.trim() 
+      : quantityStr
+
+    // 적재대구분 label 찾기
+    const selectedRackType = rackTypes.find(type => type.value === loadingRackType)
+    const rackTypeLabel = selectedRackType ? selectedRackType.label : loadingRackType
+    const rackTypeCode = loadingRackType // 코드값은 이미 선택된 value
+
+    // 적재대번호 label 찾기
+    const selectedRackNumber = rackNumbers.find(number => number.value === loadingRackNumber)
+    const rackNumberLabel = selectedRackNumber ? selectedRackNumber.label : loadingRackNumber
+    const rackNumberCode = loadingRackNumber // 코드값은 이미 선택된 value
+
+    // 테이블에 추가할 새 행 데이터
+    const newRow: TableRow = {
+      date: formattedDate,
+      time: formattedTime,
+      batchNumber: batchNumber,
+      materialCode: materialCode,
+      quantity: finalQuantity,
+      orderNumber: orderNumber,
+      orderLine: orderLine,
+      rackType: rackTypeLabel,
+      rackNumber: rackNumberLabel,
+      rackTypeCode: rackTypeCode,
+      rackNumberCode: rackNumberCode
+    }
+
+    // 테이블 데이터에 추가 (새 항목을 맨 위에 추가)
+    setTableData(prev => [newRow, ...prev])
+    
+    // 에러 메시지 초기화
+    setError(null)
+    
+    // 바코드 입력 필드 초기화
+    setBarcode('')
+    
+    // 본수 변경 모드가 아니면 quantity도 초기화
+    if (status === 'normal') {
+      setQuantity('')
+    }
+    
+    // 바코드 입력 필드로 다시 포커스 이동
+    if (barcodeInputRef.current) {
+      setTimeout(() => {
+        barcodeInputRef.current?.focus()
+      }, 0)
+    }
   }
 
-  const handleSave = () => {
-    // 저장 로직
-    console.log('저장')
+  const handleSave = async () => {
+    // 테이블 데이터가 없으면 저장하지 않음
+    if (tableData.length === 0) {
+      setError('저장할 데이터가 없습니다.')
+      return
+    }
+
+    // 이미 저장 중이면 중복 호출 방지
+    if (saving) {
+      return
+    }
+
+    // 로그인 유저 정보 가져오기
+    const user = localStorage.getItem('username') || localStorage.getItem('user') || 'UNKNOWN'
+    
+    // 테이블 데이터를 프로시저 호출 형식으로 변환
+    const scanDataList = tableData.map(row => ({
+      date: row.date,
+      time: row.time,
+      batchNumber: row.batchNumber,
+      materialCode: row.materialCode,
+      quantity: row.quantity,
+      orderNumber: row.orderNumber,
+      orderLine: row.orderLine,
+      rackTypeCode: row.rackTypeCode,
+      rackNumberCode: row.rackNumberCode
+    }))
+
+    // 프로시저 파라미터 정보 생성
+    const procedureParams = scanDataList.map((item, index) => {
+      const scanDate = item.date // YYYY-MM-DD
+      const dateTime = `${item.date} ${item.time}` // YYYY-MM-DD HH:MM:SS
+      
+      return {
+        '항목': index + 1,
+        'P_BUSI_PLACE': '1',
+        'P_JOB': '1',
+        'P_LOC_LCODE': item.rackTypeCode || '(빈값)',
+        'P_LOC_MCODE': item.rackNumberCode || '(빈값)',
+        'P_BATCH': item.batchNumber || '(빈값)',
+        'P_ITEM_CODE': item.materialCode || '(빈값)',
+        'P_CO_NO': item.orderNumber || '(빈값)',
+        'P_CO_SEAL': item.orderLine || '(빈값)',
+        'P_QTY': item.quantity || '0',
+        'P_SCAN_DATE': scanDate,
+        'P_DATETIME': dateTime,
+        'P_USER': user
+      }
+    })
+
+    // 파라미터 정보를 JSON 형식으로 포맷팅 (보기 좋게)
+    const paramsJson = JSON.stringify(procedureParams, null, 2)
+    
+    const fullMessage = `SP_PDA_LOAD_SCAN 프로시저로 전송할 파라미터:\n\n${paramsJson}\n\n이 데이터를 전송하시겠습니까?`
+
+    // 확인 팝업 표시
+    const confirmed = window.confirm(fullMessage)
+    
+    if (!confirmed) {
+      return // 사용자가 취소한 경우
+    }
+
+    // 프로시저 실행
+    try {
+      setSaving(true)
+      setError(null)
+      
+      // 백엔드 API 호출
+      const response = await axios.post('/api/location/save-scan-data', {
+        scanDataList,
+        user
+      })
+
+      if (response.data.status === 'success') {
+        // 저장 성공
+        alert('성공적으로 저장되었습니다.')
+        // 테이블 데이터 초기화
+        setTableData([])
+        setCnt('0')
+        setQuantitySum('0')
+        setError(null) // 에러 메시지 초기화
+      } else {
+        // 저장 실패
+        setError(response.data.message || '저장 중 오류가 발생했습니다.')
+      }
+    } catch (error: any) {
+      console.error('Error saving data:', error)
+      console.error('Error response:', error.response?.data)
+      const errorMessage = error.response?.data?.error 
+        || error.response?.data?.message 
+        || error.message 
+        || '저장 중 오류가 발생했습니다.'
+      setError(`저장 실패: ${errorMessage}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDelete = () => {
@@ -270,6 +488,12 @@ function LocationManagement() {
                   id="barcode"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleInput()
+                    }
+                  }}
                   placeholder="바코드"
                 />
                 <span className="camera-icon">📷</span>
@@ -284,7 +508,14 @@ function LocationManagement() {
                 type="text"
                 className="cnt-input"
                 value={cnt}
-                onChange={(e) => setCnt(e.target.value)}
+                readOnly
+                placeholder="0"
+              />
+              <input
+                type="text"
+                className="cnt-input"
+                value={quantitySum}
+                readOnly
                 placeholder="0"
               />
             </div>
@@ -341,11 +572,13 @@ function LocationManagement() {
               <tr>
                 <th>일자</th>
                 <th>시간</th>
-                <th>자재내역</th>
                 <th>배치번호</th>
+                <th>자재코드</th>
                 <th>본수</th>
-                <th>순번</th>
-                <th>위치</th>
+                <th>수주번호</th>
+                <th>수주행번</th>
+                <th>적재대구분</th>
+                <th>적재대번호</th>
               </tr>
             </thead>
             <tbody>
@@ -353,22 +586,26 @@ function LocationManagement() {
                 <tr>
                   <td data-label="일자">-</td>
                   <td data-label="시간">-</td>
-                  <td data-label="자재내역">-</td>
                   <td data-label="배치번호">-</td>
+                  <td data-label="자재코드">-</td>
                   <td data-label="본수">-</td>
-                  <td data-label="순번">-</td>
-                  <td data-label="위치">-</td>
+                  <td data-label="수주번호">-</td>
+                  <td data-label="수주행번">-</td>
+                  <td data-label="적재대구분">-</td>
+                  <td data-label="적재대번호">-</td>
                 </tr>
               ) : (
                 tableData.map((row, index) => (
                   <tr key={index}>
                     <td data-label="일자">{row.date}</td>
                     <td data-label="시간">{row.time}</td>
-                    <td data-label="자재내역">{row.material}</td>
                     <td data-label="배치번호">{row.batchNumber}</td>
+                    <td data-label="자재코드">{row.materialCode}</td>
                     <td data-label="본수">{row.quantity}</td>
-                    <td data-label="순번">{row.sequence}</td>
-                    <td data-label="위치">{row.location}</td>
+                    <td data-label="수주번호">{row.orderNumber}</td>
+                    <td data-label="수주행번">{row.orderLine}</td>
+                    <td data-label="적재대구분">{row.rackType}</td>
+                    <td data-label="적재대번호">{row.rackNumber}</td>
                   </tr>
                 ))
               )}
@@ -377,8 +614,8 @@ function LocationManagement() {
         </div>
 
         <div className="footer-buttons">
-          <button className="save-button" onClick={handleSave}>
-            저장
+          <button className="save-button" onClick={handleSave} disabled={saving || tableData.length === 0}>
+            {saving ? '저장 중...' : '저장'}
           </button>
           <button className="delete-button" onClick={handleDelete}>
             삭제
