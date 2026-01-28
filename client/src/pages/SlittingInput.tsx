@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import './SlittingInput.css'
 
 interface TableRow {
@@ -9,6 +10,18 @@ interface TableRow {
   thickness: string
   weight: string
   width: string
+}
+
+interface Shift {
+  value: string
+  label: string
+  id: number
+}
+
+interface Equipment {
+  value: string
+  label: string
+  id: number
 }
 
 function SlittingInput() {
@@ -28,6 +41,10 @@ function SlittingInput() {
   const [batchNumber, setBatchNumber] = useState('')
   const [tableData, setTableData] = useState<TableRow[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [shifts, setShifts] = useState<Shift[]>([])
+  const [equipmentList, setEquipmentList] = useState<Equipment[]>([])
+  const [loading, setLoading] = useState(false)
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null)
 
   // 인증 확인
   useEffect(() => {
@@ -36,6 +53,108 @@ function SlittingInput() {
       navigate('/login')
     }
   }, [navigate])
+
+  // 근무조 목록 조회
+  useEffect(() => {
+    const fetchShifts = async () => {
+      try {
+        setLoading(true)
+        const response = await axios.get('/api/slitting/shifts')
+        if (response.data.status === 'success') {
+          // 안전하게 문자열로 변환하는 헬퍼 함수
+          const toString = (val: any): string => {
+            if (val === null || val === undefined) return '';
+            if (typeof val === 'string') return val;
+            if (typeof val === 'number') return String(val);
+            if (typeof val === 'boolean') return String(val);
+            if (typeof val === 'object') {
+              if (val.CODE_NAME) return String(val.CODE_NAME);
+              if (val.NAME) return String(val.NAME);
+              if (val.CODE) return String(val.CODE);
+              if (val.name) return String(val.name);
+              if (val.label) return String(val.label);
+              if (val.value) return String(val.value);
+              return '';
+            }
+            return String(val);
+          };
+          
+          const rawData = response.data.data || []
+          const transformedData = rawData.map((item: any, index: number) => {
+            return {
+              value: toString(item.CODE || item.code || item.value),
+              label: toString(item.CODE_NAME || item.NAME || item.name || item.label || item.CODE || item.code || item.value),
+              id: item.id || index + 1
+            };
+          });
+          
+          console.log('Transformed shifts:', transformedData);
+          setShifts(transformedData)
+        } else {
+          console.warn('API returned non-success status:', response.data)
+          setShifts([])
+        }
+      } catch (error: any) {
+        console.error('Error fetching shifts:', error)
+        setShifts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchShifts()
+  }, [])
+
+  // 설비 목록 조회
+  useEffect(() => {
+    const fetchEquipment = async () => {
+      try {
+        setLoading(true)
+        const response = await axios.get('/api/slitting/equipment')
+        if (response.data.status === 'success') {
+          // 안전하게 문자열로 변환하는 헬퍼 함수
+          const toString = (val: any): string => {
+            if (val === null || val === undefined) return '';
+            if (typeof val === 'string') return val;
+            if (typeof val === 'number') return String(val);
+            if (typeof val === 'boolean') return String(val);
+            if (typeof val === 'object') {
+              if (val.CODE_NAME) return String(val.CODE_NAME);
+              if (val.NAME) return String(val.NAME);
+              if (val.CODE) return String(val.CODE);
+              if (val.name) return String(val.name);
+              if (val.label) return String(val.label);
+              if (val.value) return String(val.value);
+              return '';
+            }
+            return String(val);
+          };
+          
+          const rawData = response.data.data || []
+          const transformedData = rawData.map((item: any, index: number) => {
+            return {
+              value: toString(item.CODE || item.code || item.value),
+              label: toString(item.CODE_NAME || item.NAME || item.name || item.label || item.CODE || item.code || item.value),
+              id: item.id || index + 1
+            };
+          });
+          
+          console.log('Transformed equipment:', transformedData);
+          setEquipmentList(transformedData)
+        } else {
+          console.warn('API returned non-success status:', response.data)
+          setEquipmentList([])
+        }
+      } catch (error: any) {
+        console.error('Error fetching equipment:', error)
+        setEquipmentList([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchEquipment()
+  }, [])
 
   const handleInput = () => {
     // 배치번호 입력 처리 로직
@@ -78,13 +197,34 @@ function SlittingInput() {
   }
 
   const handleDelete = () => {
-    // 삭제 로직
-    if (tableData.length === 0) {
-      setError('삭제할 데이터가 없습니다.')
+    // 선택된 행이 없으면 삭제하지 않음
+    if (selectedRowIndex === null) {
+      setError('삭제할 항목을 선택해주세요.')
       return
     }
-    setTableData([])
+
+    // 선택된 행 삭제
+    setTableData(prev => {
+      const newData = prev.filter((_, index) => index !== selectedRowIndex)
+      // 순번 재정렬
+      return newData.map((row, index) => ({
+        ...row,
+        sequence: String(index + 1)
+      }))
+    })
+    
+    // 선택 상태 초기화
+    setSelectedRowIndex(null)
     setError(null)
+  }
+
+  const handleRowClick = (index: number) => {
+    // 같은 행을 클릭하면 선택 해제, 다른 행을 클릭하면 선택
+    if (selectedRowIndex === index) {
+      setSelectedRowIndex(null)
+    } else {
+      setSelectedRowIndex(index)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -128,11 +268,14 @@ function SlittingInput() {
                 id="shift"
                 value={shift}
                 onChange={(e) => setShift(e.target.value)}
+                disabled={loading}
               >
                 <option value="">선택</option>
-                <option value="1조">1조</option>
-                <option value="2조">2조</option>
-                <option value="3조">3조</option>
+                {shifts.map((shiftItem) => (
+                  <option key={shiftItem.id} value={String(shiftItem.value || '')}>
+                    {String(shiftItem.label || '')}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -142,11 +285,14 @@ function SlittingInput() {
                 id="equipment"
                 value={equipment}
                 onChange={(e) => setEquipment(e.target.value)}
+                disabled={loading}
               >
                 <option value="">설비선택</option>
-                <option value="설비1">설비1</option>
-                <option value="설비2">설비2</option>
-                <option value="설비3">설비3</option>
+                {equipmentList.map((equipmentItem) => (
+                  <option key={equipmentItem.id} value={String(equipmentItem.value || '')}>
+                    {String(equipmentItem.label || '')}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -198,7 +344,12 @@ function SlittingInput() {
                 </tr>
               ) : (
                 tableData.map((row, index) => (
-                  <tr key={index}>
+                  <tr 
+                    key={index}
+                    onClick={() => handleRowClick(index)}
+                    className={selectedRowIndex === index ? 'selected-row' : ''}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <td data-label="순번">{row.sequence}</td>
                     <td data-label="배치번호">{row.batchNumber}</td>
                     <td data-label="코일번호">{row.coilNumber}</td>
@@ -216,7 +367,11 @@ function SlittingInput() {
           <button className="save-button" onClick={handleSave}>
             저장
           </button>
-          <button className="delete-button" onClick={handleDelete}>
+          <button 
+            className="delete-button" 
+            onClick={handleDelete}
+            disabled={selectedRowIndex === null}
+          >
             삭제
           </button>
         </div>

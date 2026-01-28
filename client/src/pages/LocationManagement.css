@@ -293,6 +293,15 @@
   background: #f9fafb;
 }
 
+.data-table tbody tr.selected-row {
+  background: #dbeafe;
+  border-left: 4px solid #3b82f6;
+}
+
+.data-table tbody tr.selected-row:hover {
+  background: #bfdbfe;
+}
+
 .data-table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -361,8 +370,15 @@
   color: white;
 }
 
-.delete-button:hover {
+.delete-button:hover:not(:disabled) {
   background: #6b7280;
+}
+
+.delete-button:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .save-button:active,

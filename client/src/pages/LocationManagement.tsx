@@ -48,6 +48,7 @@ function LocationManagement() {
   const [loadingRackNumbers, setLoadingRackNumbers] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null)
 
   // 적재대구분 목록 조회
   useEffect(() => {
@@ -363,6 +364,25 @@ function LocationManagement() {
       })
 
       if (response.data.status === 'success') {
+        // 프로시저 리턴값 표시
+        const results = response.data.results || []
+        let resultMessage = 'SP_PDA_LOAD_SCAN 프로시저 실행 결과:\n\n'
+        
+        if (results.length > 0) {
+          results.forEach((result: any, index: number) => {
+            resultMessage += `[항목 ${index + 1}]\n`
+            resultMessage += `배치번호: ${result.batchNumber || '-'}\n`
+            resultMessage += `P_OUT_YN: ${result.outYn || '-'}\n`
+            resultMessage += `P_OUT_MSG: ${result.outMsg || '-'}\n\n`
+          })
+        } else {
+          resultMessage += '처리된 항목이 없습니다.\n'
+        }
+        
+        resultMessage += `\n총 ${response.data.successCount || results.length}건 처리 완료`
+        
+        alert(resultMessage)
+        
         // 저장 성공
         alert('성공적으로 저장되었습니다.')
         // 테이블 데이터 초기화
@@ -371,25 +391,80 @@ function LocationManagement() {
         setQuantitySum('0')
         setError(null) // 에러 메시지 초기화
       } else {
-        // 저장 실패
+        // 저장 실패 - 프로시저 리턴값도 표시
+        const results = response.data.results || []
+        let errorMessage = response.data.message || '저장 중 오류가 발생했습니다.'
+        
+        if (results.length > 0) {
+          errorMessage += '\n\nSP_PDA_LOAD_SCAN 프로시저 실행 결과:\n\n'
+          results.forEach((result: any, index: number) => {
+            errorMessage += `[항목 ${index + 1}]\n`
+            errorMessage += `배치번호: ${result.batchNumber || '-'}\n`
+            errorMessage += `P_OUT_YN: ${result.outYn || '-'}\n`
+            errorMessage += `P_OUT_MSG: ${result.outMsg || '-'}\n\n`
+          })
+          errorMessage += `\n성공: ${response.data.successCount || 0}건, 실패: ${response.data.failedCount || 0}건`
+        }
+        
+        alert(errorMessage)
         setError(response.data.message || '저장 중 오류가 발생했습니다.')
       }
     } catch (error: any) {
       console.error('Error saving data:', error)
       console.error('Error response:', error.response?.data)
-      const errorMessage = error.response?.data?.error 
+      
+      // 에러 응답에도 프로시저 리턴값이 있을 수 있음
+      const results = error.response?.data?.results || []
+      let errorMessage = error.response?.data?.error 
         || error.response?.data?.message 
         || error.message 
         || '저장 중 오류가 발생했습니다.'
-      setError(`저장 실패: ${errorMessage}`)
+      
+      if (results.length > 0) {
+        errorMessage += '\n\nSP_PDA_LOAD_SCAN 프로시저 실행 결과:\n\n'
+        results.forEach((result: any, index: number) => {
+          errorMessage += `[항목 ${index + 1}]\n`
+          errorMessage += `배치번호: ${result.batchNumber || '-'}\n`
+          errorMessage += `P_OUT_YN: ${result.outYn || '-'}\n`
+          errorMessage += `P_OUT_MSG: ${result.outMsg || '-'}\n\n`
+        })
+        if (error.response?.data?.successCount !== undefined) {
+          errorMessage += `\n성공: ${error.response.data.successCount}건, 실패: ${error.response.data.failedCount || 0}건`
+        }
+      }
+      
+      alert(`저장 실패\n\n${errorMessage}`)
+      setError(`저장 실패: ${error.response?.data?.message || error.message || '저장 중 오류가 발생했습니다.'}`)
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = () => {
-    // 삭제 로직
-    console.log('삭제')
+    // 선택된 행이 없으면 삭제하지 않음
+    if (selectedRowIndex === null) {
+      setError('삭제할 항목을 선택해주세요.')
+      return
+    }
+
+    // 선택된 행 삭제
+    setTableData(prev => {
+      const newData = prev.filter((_, index) => index !== selectedRowIndex)
+      return newData
+    })
+    
+    // 선택 상태 초기화
+    setSelectedRowIndex(null)
+    setError(null)
+  }
+
+  const handleRowClick = (index: number) => {
+    // 같은 행을 클릭하면 선택 해제, 다른 행을 클릭하면 선택
+    if (selectedRowIndex === index) {
+      setSelectedRowIndex(null)
+    } else {
+      setSelectedRowIndex(index)
+    }
   }
 
   // 인증 확인
@@ -596,7 +671,12 @@ function LocationManagement() {
                 </tr>
               ) : (
                 tableData.map((row, index) => (
-                  <tr key={index}>
+                  <tr 
+                    key={index}
+                    onClick={() => handleRowClick(index)}
+                    className={selectedRowIndex === index ? 'selected-row' : ''}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <td data-label="일자">{row.date}</td>
                     <td data-label="시간">{row.time}</td>
                     <td data-label="배치번호">{row.batchNumber}</td>
@@ -617,7 +697,11 @@ function LocationManagement() {
           <button className="save-button" onClick={handleSave} disabled={saving || tableData.length === 0}>
             {saving ? '저장 중...' : '저장'}
           </button>
-          <button className="delete-button" onClick={handleDelete}>
+          <button 
+            className="delete-button" 
+            onClick={handleDelete}
+            disabled={selectedRowIndex === null}
+          >
             삭제
           </button>
         </div>

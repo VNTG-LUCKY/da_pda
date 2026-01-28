@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { initializePool, closePool, executeQuery } from './config/database';
 import locationRoutes from './routes/location';
+import slittingRoutes from './routes/slitting';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/location', locationRoutes);
+app.use('/api/slitting', slittingRoutes);
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
