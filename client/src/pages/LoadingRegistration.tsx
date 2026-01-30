@@ -232,7 +232,7 @@ function LoadingRegistration() {
                   name="mode"
                   value="normal"
                   checked={mode === 'normal'}
-                  onChange={(e) => setMode('normal')}
+                  onChange={() => setMode('normal')}
                 />
                 <label htmlFor="normal">정상</label>
               </div>
@@ -243,7 +243,7 @@ function LoadingRegistration() {
                   name="mode"
                   value="quantityChange"
                   checked={mode === 'quantityChange'}
-                  onChange={(e) => setMode('quantityChange')}
+                  onChange={() => setMode('quantityChange')}
                 />
                 <label htmlFor="quantityChange">수량변경</label>
               </div>

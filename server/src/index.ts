@@ -8,10 +8,16 @@ import slittingRoutes from './routes/slitting';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // Middleware
-app.use(cors());
+// CORS 설정: 모든 origin 허용 (프로덕션에서는 특정 origin만 허용하도록 수정 권장)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -141,9 +147,10 @@ async function startServer() {
       console.warn('You can test DB connection later via /api/db/test endpoint');
     }
     
-    // Express 서버 시작
-    app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
+    // Express 서버 시작 (모든 인터페이스에서 리스닝)
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server is running on http://0.0.0.0:${PORT}`);
+      console.log(`Server is accessible at http://172.17.1.56:${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
