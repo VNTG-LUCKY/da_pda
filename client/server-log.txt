@@ -1,0 +1,11 @@
+[2026-02-09T10:50:32.110Z] Frontend: http://0.0.0.0:3000 (정상 시작)
+[2026-02-09T10:50:32.112Z] API proxy: /api -> http://localhost:6000
+[2026-02-09T10:50:32.829Z] Frontend: http://0.0.0.0:3000 (정상 시작)
+[2026-02-09T10:50:32.830Z] API proxy: /api -> http://localhost:6000
+[2026-02-09T10:50:37.352Z] ERROR: 3000 포트 사용 중. 기존 CMD 창을 모두 닫은 뒤 START-SERVER.bat 다시 실행하세요.
+[2026-02-10T04:15:51.659Z] Frontend: http://0.0.0.0:3000 (정상 시작)
+[2026-02-10T04:15:51.660Z] API proxy: /api -> http://localhost:6000
+[2026-02-10T04:15:56.406Z] ERROR: 3000 포트 사용 중. 기존 CMD 창을 모두 닫은 뒤 START-SERVER.bat 다시 실행하세요.
+[2026-02-10T06:31:13.732Z] Frontend: http://0.0.0.0:3000 (정상 시작)
+[2026-02-10T06:31:13.734Z] API proxy: /api -> http://localhost:6000
+[2026-02-10T06:31:18.376Z] ERROR: 3000 포트 사용 중. 기존 CMD 창을 모두 닫은 뒤 START-SERVER.bat 다시 실행하세요.

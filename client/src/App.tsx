@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Main from './pages/Main'
@@ -8,42 +8,83 @@ import LoadingRegistration from './pages/LoadingRegistration'
 import './App.css'
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true'
   })
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      localStorage.removeItem('isAuthenticated')
+    }
+  }, [isAuthenticated])
+
+  // 휴대폰 등에서 접속 시 캐시 영향 최소화: Cache API 비우기 (매 방문 시)
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    if (!isMobile) return
+
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        Promise.all(names.map((name) => caches.delete(name))).catch(() => {})
+      })
+    }
+  }, [])
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route 
-          path="/login" 
-          element={<Login setIsAuthenticated={setIsAuthenticated} />} 
-        />
-        <Route 
-          path="/main" 
+        <Route
+          path="/login"
           element={
-            isAuthenticated ? <Main /> : <Navigate to="/login" replace />
-          } 
+            isAuthenticated ? (
+              <Navigate to="/main" replace />
+            ) : (
+              <Login setIsAuthenticated={setIsAuthenticated} />
+            )
+          }
         />
-        <Route 
-          path="/location-management" 
+        <Route
+          path="/main"
           element={
-            isAuthenticated ? <LocationManagement /> : <Navigate to="/login" replace />
-          } 
+            isAuthenticated ? (
+              <Main setIsAuthenticated={setIsAuthenticated} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
-        <Route 
-          path="/slitting-input" 
+        <Route
+          path="/location-management"
           element={
-            isAuthenticated ? <SlittingInput /> : <Navigate to="/login" replace />
-          } 
+            isAuthenticated ? (
+              <LocationManagement />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
-        <Route 
-          path="/loading-registration" 
+        <Route
+          path="/slitting-input"
           element={
-            isAuthenticated ? <LoadingRegistration /> : <Navigate to="/login" replace />
-          } 
+            isAuthenticated ? (
+              <SlittingInput />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
-        <Route path="/" element={<Navigate to={isAuthenticated ? "/main" : "/login"} replace />} />
+        <Route
+          path="/loading-registration"
+          element={
+            isAuthenticated ? (
+              <LoadingRegistration />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route path="/" element={<Navigate to={isAuthenticated ? '/main' : '/login'} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

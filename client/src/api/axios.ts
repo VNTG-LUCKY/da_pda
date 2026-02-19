@@ -1,28 +1,16 @@
 import axios from 'axios'
 
-// API base URL 설정
-// 개발 환경: Vite 프록시 사용 (상대 경로) → localhost:5000으로 프록시됨
-// 프로덕션 환경: 현재 호스트의 5000 포트 사용
-//   - 로컬에서 localhost:3000 접속 시 → http://localhost:5000
-//   - 서버에서 172.17.1.56:3000 접속 시 → http://172.17.1.56:5000
+// API base URL (리버스 프록시 방식)
+// - 브라우저는 항상 같은 출처(현재 페이지 주소)로만 요청 → 61.107.76.23에서는 3000만 사용
+// - 3000 서버(start-preview)가 /api를 내부에서 6000으로 프록시 (Chrome은 6000 포트 직접 접속 차단됨)
+// - 개발: 빈 문자열 → Vite가 /api를 5000으로 프록시. 로컬 미리보기: localhost:5000
 const getBaseURL = () => {
-  // 개발 환경 (npm run dev): Vite 프록시 사용
-  if (import.meta.env.DEV) {
-    // 빈 문자열 = 상대 경로 → Vite 프록시가 localhost:5000으로 전달
-    return ''
-  }
-  
-  // 프로덕션 환경 (npm run build 후 서빙)
-  // 현재 접속한 호스트의 5000 포트를 백엔드로 사용
-  const hostname = window.location.hostname
-
-  // 로컬호스트인 경우
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+  if (import.meta.env.DEV) return ''
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:5000'
   }
-  
-  // 서버인 경우 (172.17.1.56 등)
-  return `http://${hostname}:5000`
+  // 배포 서버(61.107.76.23 등): 절대 6000 직접 호출 금지. 같은 출처(3000)만 사용.
+  return ''
 }
 
 // axios 인스턴스 생성

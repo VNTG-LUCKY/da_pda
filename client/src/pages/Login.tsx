@@ -6,8 +6,10 @@ interface LoginProps {
   setIsAuthenticated: (value: boolean) => void
 }
 
+const LAST_USERNAME_KEY = 'da_pda_last_username'
+
 function Login({ setIsAuthenticated }: LoginProps) {
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(() => localStorage.getItem(LAST_USERNAME_KEY) || '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const navigate = useNavigate()
@@ -19,6 +21,8 @@ function Login({ setIsAuthenticated }: LoginProps) {
     // 하드코딩된 로그인 정보
     if (username === 'dapda' && password === '1234') {
       localStorage.setItem('isAuthenticated', 'true')
+      localStorage.setItem(LAST_USERNAME_KEY, username)
+      localStorage.setItem('username', username)
       setIsAuthenticated(true)
       navigate('/main')
     } else {

@@ -135,11 +135,15 @@ router.get('/rack-types', async (req: Request, res: Response) => {
       data: rackTypes
     });
   } catch (error: any) {
-    console.error('Error fetching rack types:', error);
+    const errMsg = error?.message != null ? String(error.message) : 'Unknown error';
+    const errCode = error?.errorNum ?? error?.code;
+    console.error('Error fetching rack types:', errMsg, errCode != null ? `[${errCode}]` : '');
+    if (error?.stack) console.error(error.stack);
     res.status(500).json({
       status: 'error',
       message: 'Failed to fetch rack types',
-      error: error.message
+      error: errMsg,
+      ...(errCode != null && { errorCode: errCode })
     });
   }
 });

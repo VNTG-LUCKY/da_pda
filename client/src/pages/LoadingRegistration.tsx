@@ -116,7 +116,7 @@ function LoadingRegistration() {
       </div>
       
       {error && (
-        <div style={{ padding: '1rem', background: '#fee2e2', color: '#dc2626', textAlign: 'center' }}>
+        <div className="loading-registration-error-banner">
           {error}
         </div>
       )}
@@ -159,13 +159,13 @@ function LoadingRegistration() {
             </div>
 
             <div className="input-group">
-              <label htmlFor="vehicleFullName">차량풀네임</label>
+              <label htmlFor="vehicleFullName">풀네임</label>
               <input
                 type="text"
                 id="vehicleFullName"
                 value={vehicleFullName}
                 onChange={(e) => setVehicleFullName(e.target.value)}
-                placeholder="차량풀네임"
+                placeholder="풀네임"
               />
             </div>
           </div>
@@ -197,11 +197,12 @@ function LoadingRegistration() {
           <div className="input-row">
             <div className="input-group">
               <label htmlFor="barcode">바코드</label>
-              <div className="input-with-icon">
+              <div className="input-with-icon barcode-input-wrap">
                 <input
                   ref={barcodeInputRef}
                   type="text"
                   id="barcode"
+                  className="barcode-input"
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
                   onKeyPress={handleKeyPress}

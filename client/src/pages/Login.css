@@ -1,28 +1,20 @@
+/* 로그인 - PDA/휴대폰 모바일 중심 */
 .login-container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 35%, #667eea 100%);
+  padding-top: var(--safe-area-top, 0);
+  padding-bottom: var(--safe-area-bottom, 0);
+  padding-left: var(--safe-area-left, 0);
+  padding-right: var(--safe-area-right, 0);
 }
 
 .login-header {
-  background: #1e3a8a;
-  padding: 2rem 1rem;
+  padding: 1rem 1rem 1.25rem;
   text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.login-header::after {
-  content: '';
-  position: absolute;
-  bottom: -50px;
-  left: 0;
-  width: 200px;
-  height: 200px;
-  background: #1e3a8a;
-  border-radius: 50%;
-  transform: translateX(-50%);
+  flex-shrink: 0;
 }
 
 .login-header-content {
@@ -31,68 +23,73 @@
 }
 
 .login-company-name {
-  color: white;
-  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.25rem;
   font-weight: 600;
-  margin: 0 0 0.5rem 0;
-}
-
-.login-app-name {
-  color: #60a5fa;
-  font-size: 2.5rem;
-  font-weight: 700;
   margin: 0 0 0.25rem 0;
 }
 
-.login-subtitle {
-  color: white;
-  font-size: 0.875rem;
-  margin: 0;
-  opacity: 0.9;
+.login-app-name {
+  color: #93c5fd;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.15rem 0;
 }
 
+.login-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
+/* 폼 영역: 화면 가득, 터치 친화 */
 .login-form-container {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 2rem 1rem;
+  padding: 1rem 1rem 1.5rem;
+  min-height: 0;
 }
 
 .login-form {
-  background: white;
+  background: #fff;
   border-radius: 12px;
-  padding: 2rem;
+  padding: 1.25rem 1rem;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  max-width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .login-input-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .login-input-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
   color: #374151;
   font-weight: 500;
   font-size: 0.875rem;
 }
 
+/* iOS 줌 방지 + 터치 영역 44px 이상 */
 .login-input-group input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
+  min-height: var(--touch-min, 44px);
   border: 2px solid #e5e7eb;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 16px;
   transition: border-color 0.2s;
   box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .login-input-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #1e40af;
 }
 
 .login-error {
@@ -107,42 +104,39 @@
 
 .login-button {
   width: 100%;
-  padding: 0.875rem;
-  background: #667eea;
-  color: white;
+  padding: 0.875rem 1rem;
+  min-height: var(--touch-min, 44px);
+  background: #1e40af;
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .login-button:hover {
-  background: #5568d3;
+  background: #1e3a8a;
 }
 
 .login-button:active {
   transform: scale(0.98);
 }
 
-@media (max-width: 768px) {
+/* 태블릿 이상에서만 폼 너비 제한 */
+@media (min-width: 480px) {
   .login-form {
-    padding: 1.5rem;
+    max-width: 360px;
+    padding: 1.5rem 1.25rem;
   }
-  
+
+  .login-company-name {
+    font-size: 1.35rem;
+  }
+
   .login-app-name {
     font-size: 2rem;
   }
 }
-
-
-
-
-
-
-
-
-
-
-

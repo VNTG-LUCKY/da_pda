@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from '../api/axios'
+import axios from 'axios'
 import './LocationManagement.css'
 
 interface TableRow {
@@ -94,8 +94,10 @@ function LocationManagement() {
           setRackTypes([])
         }
       } catch (error: any) {
-        console.error('Error fetching rack types:', error)
-        // 에러가 발생해도 빈 배열로 설정하여 화면은 정상 표시
+        const data = error?.response?.data
+        const backendMsg = typeof data?.error === 'string' ? data.error : (data?.message || error?.message || '서버 오류')
+        console.error('Error fetching rack types:', error?.response?.data ?? error)
+        setError(`적재대구분 로드 실패: ${backendMsg}`)
         setRackTypes([])
       } finally {
         setLoading(false)
@@ -268,8 +270,8 @@ function LocationManagement() {
       rackNumberCode: rackNumberCode
     }
 
-    // 테이블 데이터에 추가 (새 항목을 맨 위에 추가)
-    setTableData(prev => [newRow, ...prev])
+    // 테이블 데이터에 추가 (최근 입력이 LIST 하단에 나오도록)
+    setTableData(prev => [...prev, newRow])
     
     // 에러 메시지 초기화
     setError(null)
@@ -364,25 +366,6 @@ function LocationManagement() {
       })
 
       if (response.data.status === 'success') {
-        // 프로시저 리턴값 표시
-        const results = response.data.results || []
-        let resultMessage = 'SP_PDA_LOAD_SCAN 프로시저 실행 결과:\n\n'
-        
-        if (results.length > 0) {
-          results.forEach((result: any, index: number) => {
-            resultMessage += `[항목 ${index + 1}]\n`
-            resultMessage += `배치번호: ${result.batchNumber || '-'}\n`
-            resultMessage += `P_OUT_YN: ${result.outYn || '-'}\n`
-            resultMessage += `P_OUT_MSG: ${result.outMsg || '-'}\n\n`
-          })
-        } else {
-          resultMessage += '처리된 항목이 없습니다.\n'
-        }
-        
-        resultMessage += `\n총 ${response.data.successCount || results.length}건 처리 완료`
-        
-        alert(resultMessage)
-        
         // 저장 성공
         alert('성공적으로 저장되었습니다.')
         // 테이블 데이터 초기화
@@ -391,50 +374,17 @@ function LocationManagement() {
         setQuantitySum('0')
         setError(null) // 에러 메시지 초기화
       } else {
-        // 저장 실패 - 프로시저 리턴값도 표시
-        const results = response.data.results || []
-        let errorMessage = response.data.message || '저장 중 오류가 발생했습니다.'
-        
-        if (results.length > 0) {
-          errorMessage += '\n\nSP_PDA_LOAD_SCAN 프로시저 실행 결과:\n\n'
-          results.forEach((result: any, index: number) => {
-            errorMessage += `[항목 ${index + 1}]\n`
-            errorMessage += `배치번호: ${result.batchNumber || '-'}\n`
-            errorMessage += `P_OUT_YN: ${result.outYn || '-'}\n`
-            errorMessage += `P_OUT_MSG: ${result.outMsg || '-'}\n\n`
-          })
-          errorMessage += `\n성공: ${response.data.successCount || 0}건, 실패: ${response.data.failedCount || 0}건`
-        }
-        
-        alert(errorMessage)
+        // 저장 실패
         setError(response.data.message || '저장 중 오류가 발생했습니다.')
       }
     } catch (error: any) {
       console.error('Error saving data:', error)
       console.error('Error response:', error.response?.data)
-      
-      // 에러 응답에도 프로시저 리턴값이 있을 수 있음
-      const results = error.response?.data?.results || []
-      let errorMessage = error.response?.data?.error 
+      const errorMessage = error.response?.data?.error 
         || error.response?.data?.message 
         || error.message 
         || '저장 중 오류가 발생했습니다.'
-      
-      if (results.length > 0) {
-        errorMessage += '\n\nSP_PDA_LOAD_SCAN 프로시저 실행 결과:\n\n'
-        results.forEach((result: any, index: number) => {
-          errorMessage += `[항목 ${index + 1}]\n`
-          errorMessage += `배치번호: ${result.batchNumber || '-'}\n`
-          errorMessage += `P_OUT_YN: ${result.outYn || '-'}\n`
-          errorMessage += `P_OUT_MSG: ${result.outMsg || '-'}\n\n`
-        })
-        if (error.response?.data?.successCount !== undefined) {
-          errorMessage += `\n성공: ${error.response.data.successCount}건, 실패: ${error.response.data.failedCount || 0}건`
-        }
-      }
-      
-      alert(`저장 실패\n\n${errorMessage}`)
-      setError(`저장 실패: ${error.response?.data?.message || error.message || '저장 중 오류가 발생했습니다.'}`)
+      setError(`저장 실패: ${errorMessage}`)
     } finally {
       setSaving(false)
     }
@@ -479,13 +429,13 @@ function LocationManagement() {
     <div className="location-management-container">
       <div className="location-header">
         <button className="back-button" onClick={() => navigate('/main')}>
-          ← 뒤로
+          BACK
         </button>
         <h1>적재위치 등록</h1>
       </div>
       
       {error && (
-        <div style={{ padding: '1rem', background: '#fee2e2', color: '#dc2626', textAlign: 'center' }}>
+        <div className="location-error-banner">
           {error}
         </div>
       )}
@@ -493,21 +443,19 @@ function LocationManagement() {
       <div className="location-content">
         <div className="input-section">
           <div className="input-group">
-            <label htmlFor="loadingRackScan">적재대스캔</label>
-            <div className="input-with-icon">
-              <input
-                type="text"
-                id="loadingRackScan"
-                value={loadingRackScan}
-                onChange={(e) => setLoadingRackScan(e.target.value)}
-                placeholder="적재대스캔"
-              />
-              <span className="camera-icon">📷</span>
-            </div>
+            <label htmlFor="loadingRackScan" className="label-large">적재대스캔</label>
+            <input
+              type="text"
+              id="loadingRackScan"
+              className="input-scan"
+              value={loadingRackScan}
+              onChange={(e) => setLoadingRackScan(e.target.value)}
+              placeholder="적재대스캔"
+            />
           </div>
 
           <div className="input-group">
-            <label htmlFor="loadingRackType" className="label-red">적재대구분</label>
+            <label htmlFor="loadingRackType" className="label-red label-large">적재대구분</label>
             <select
               id="loadingRackType"
               value={loadingRackType}
@@ -527,7 +475,7 @@ function LocationManagement() {
           </div>
 
           <div className="input-group">
-            <label htmlFor="loadingRackNumber" className="label-red">적재대번호</label>
+            <label htmlFor="loadingRackNumber" className="label-red label-large">적재대번호</label>
             <select
               id="loadingRackNumber"
               value={loadingRackNumber}
@@ -553,52 +501,33 @@ function LocationManagement() {
             </select>
           </div>
 
-          <div className="input-group barcode-group">
-            <label htmlFor="barcode">바코드</label>
+          <div className="input-group barcode-group compact-row">
             <div className="barcode-input-wrapper">
-              <div className="input-with-icon">
-                <input
-                  ref={barcodeInputRef}
-                  type="text"
-                  id="barcode"
-                  value={barcode}
-                  onChange={(e) => setBarcode(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleInput()
-                    }
-                  }}
-                  placeholder="바코드"
-                />
-                <span className="camera-icon">📷</span>
-              </div>
               <input
+                ref={barcodeInputRef}
                 type="text"
-                className="cnt-label-input"
-                value="CNT"
-                readOnly
+                id="barcode"
+                className="barcode-input-inline"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleInput()
+                  }
+                }}
+                placeholder="바코드"
               />
-              <input
-                type="text"
-                className="cnt-input"
-                value={cnt}
-                readOnly
-                placeholder="0"
-              />
-              <input
-                type="text"
-                className="cnt-input"
-                value={quantitySum}
-                readOnly
-                placeholder="0"
-              />
+              {/* PDA/휴대폰에서 손으로 탭해도 키보드가 안 뜨게 막음. 스캐너는 포커스 시 입력 가능 */}
+              <div className="barcode-tap-blocker" aria-hidden="true" />
             </div>
+            <input type="text" className="cnt-input" value={cnt} readOnly placeholder="0" aria-label="건수값" />
+            <input type="text" className="cnt-input cnt-sum" value={quantitySum} readOnly placeholder="0" aria-label="본수합계" />
           </div>
 
-          <div className="radio-group">
-            <div className="radio-buttons-wrapper">
-              <div className="radio-option">
+          <div className="radio-group" role="group" aria-label="정상/본수변경">
+            <div className="radio-group-row">
+              <label className="radio-option" htmlFor="normal">
                 <input
                   type="radio"
                   id="normal"
@@ -607,9 +536,9 @@ function LocationManagement() {
                   checked={status === 'normal'}
                   onChange={(e) => setStatus(e.target.value as 'normal' | 'quantity-change')}
                 />
-                <label htmlFor="normal">정상</label>
-              </div>
-              <div className="radio-option">
+                <span>정상</span>
+              </label>
+              <label className="radio-option" htmlFor="quantity-change">
                 <input
                   type="radio"
                   id="quantity-change"
@@ -618,18 +547,15 @@ function LocationManagement() {
                   checked={status === 'quantity-change'}
                   onChange={(e) => setStatus(e.target.value as 'normal' | 'quantity-change')}
                 />
-                <label htmlFor="quantity-change">본수변경</label>
-              </div>
-            </div>
-            <div className="quantity-input-wrapper">
-              <label htmlFor="quantity">본수</label>
+                <span>본수변경</span>
+              </label>
               <input
                 type="text"
                 id="quantity"
                 className="quantity-input"
+                placeholder="본수"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                placeholder="본수"
               />
             </div>
           </div>

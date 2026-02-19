@@ -1,32 +1,40 @@
+/* 슬리팅 투입 - PDA/휴대폰 모바일 기본 */
 .location-management-container {
   min-height: 100vh;
+  min-height: 100dvh;
   background: #f0f4f8;
   display: flex;
   flex-direction: column;
+  padding-left: var(--safe-area-left, 0);
+  padding-right: var(--safe-area-right, 0);
+  padding-bottom: var(--safe-area-bottom, 0);
 }
 
 .location-header {
   background: #1e3a8a;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
+  padding-top: max(0.5rem, var(--safe-area-top, 0));
   display: flex;
   align-items: center;
-  gap: 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
+  min-height: var(--touch-min, 44px);
 }
 
 .location-header .back-button {
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  min-height: var(--touch-min, 44px);
+  border-radius: 8px;
+  font-size: 0.8125rem;
   cursor: pointer;
   color: white;
   font-weight: 500;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .location-header .back-button:hover {
@@ -38,61 +46,71 @@
 }
 
 .location-header h1 {
+  position: absolute;
+  left: 0;
+  right: 0;
   color: white;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   margin: 0;
-  flex: 1;
   text-align: center;
+  pointer-events: none;
+  padding: 0 4rem;
+  box-sizing: border-box;
+}
+
+/* 에러 배너 - 모바일 공통 스타일 */
+.slitting-error-banner {
+  padding: 0.5rem 0.75rem;
+  background: #fee2e2;
+  color: #dc2626;
+  text-align: center;
+  font-size: 0.8125rem;
 }
 
 .location-content {
   flex: 1;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 0.5rem;
   width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .input-section {
   background: white;
   border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.input-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: nowrap;
-}
-
-.input-row .input-group {
-  flex: 1;
-  margin-bottom: 0;
+  padding: 0.55rem 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
 }
 
 .input-group {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
   flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .input-group:last-child {
   margin-bottom: 0;
 }
 
+.input-group.input-group-barcode {
+  margin-bottom: 0.5rem;
+}
+
 .input-group label {
-  min-width: 100px;
+  min-width: 70px;
+  width: 70px;
   color: #374151;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
 }
 
@@ -101,241 +119,189 @@
   font-weight: 600;
 }
 
-.input-with-icon {
-  position: relative;
-  flex: 1;
-  min-width: 200px;
-  display: flex;
-  align-items: center;
-}
-
-.input-with-icon input {
-  flex: 1;
-  padding: 0.75rem;
-  padding-right: 2.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
-}
-
-.camera-icon {
-  position: absolute;
-  right: 0.75rem;
-  font-size: 1.25rem;
-  pointer-events: none;
-  user-select: none;
-}
-
-.input-group input[type="text"]:not(.input-with-icon input),
+.input-group .input-with-icon,
+.input-group > select,
 .input-group input[type="date"],
-.input-group select {
-  flex: 1;
-  min-width: 150px;
-  padding: 0.75rem;
+.input-group input[type="text"] {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.5rem 0.6rem;
+  min-height: 40px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 16px;
   background: white;
   transition: border-color 0.2s;
+  box-sizing: border-box;
 }
 
-.input-group input[type="text"]:focus,
-.input-group input[type="date"]:focus,
+.input-group input:focus,
 .input-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* 바코드 스캔: 바깥쪽 네모만 제거 (wrapper 테두리 제거, input 한 개만 표시) */
+.input-group.input-group-barcode .barcode-input-wrap {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  min-height: 0;
+}
+.input-group.input-group-barcode .barcode-input-wrap .barcode-input {
+  /* input은 기본 테두리 유지 → 박스 하나만 보이게 */
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.5rem 2.25rem 0.5rem 0.6rem;
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  box-sizing: border-box;
+}
+.input-group.input-group-barcode .barcode-input-wrap .barcode-input:focus {
   outline: none;
   border-color: #3b82f6;
 }
 
 .input-group select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  padding-right: 2.5rem;
+  background-position: right 0.5rem center;
+  padding-right: 1.75rem;
 }
 
-.barcode-group {
-  margin-bottom: 1rem;
+/* 일자 + 조회 한 줄 */
+.date-with-search {
+  margin-bottom: 0.4rem;
 }
 
-.barcode-group label {
-  min-width: 100px;
-  flex-shrink: 0;
-}
-
-.barcode-input-wrapper {
+.date-with-search .date-search-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
 }
 
-.barcode-input-wrapper .input-with-icon {
-  flex: 4;
-  min-width: 150px;
+.date-with-search .date-input-narrow {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
 }
 
-.cnt-label-input {
-  flex: 0 0 15px;
-  min-width: 12px;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+.date-with-search .btn-search-small {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  min-height: var(--touch-min, 44px);
   font-size: 0.875rem;
-  background: #f3f4f6;
-  text-align: center;
-  color: #374151;
   font-weight: 500;
-}
-
-.cnt-input {
-  flex: 0 0 20px;
-  min-width: 15px;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
+  color: #fff;
+  background: #3b82f6;
+  border: none;
   border-radius: 6px;
-  font-size: 0.875rem;
-  background: #f9fafb;
-  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.radio-group {
+.date-with-search .btn-search-small:hover {
+  background: #2563eb;
+}
+
+.date-with-search .btn-search-small:active {
+  transform: scale(0.98);
+}
+
+/* 근무조/작업장 한 줄 (모바일에서도 2열) */
+.input-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
   flex-wrap: nowrap;
-  padding: 1rem;
-  background: #fee2e2;
-  border-radius: 6px;
 }
 
-.radio-buttons-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.input-row .input-group {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* 근무조(좌) + 바코드(우) 한 줄 */
+.input-row.barcode-shift-row {
+  align-items: stretch;
+}
+
+.input-row.barcode-shift-row .input-group.shift-left {
   flex: 0 0 auto;
-  flex-shrink: 0;
+  min-width: 6rem;
 }
 
-.radio-option {
+.input-row.barcode-shift-row .barcode-input-wrap.barcode-right {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
-.radio-option input[type="radio"] {
-  width: 20px;
-  height: 20px;
-  accent-color: #ff9800;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.radio-option label {
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin: 0;
-  white-space: nowrap;
-}
-
-.quantity-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  flex: 0 0 auto;
-}
-
-.quantity-input-wrapper label {
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.quantity-input {
-  padding: 0.5rem;
+.input-row.barcode-shift-row .barcode-input-wrap .barcode-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  min-height: 40px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
-  width: 100px;
-  min-width: 80px;
-  flex-shrink: 0;
-}
-
-.table-section {
   background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-x: auto;
+  box-sizing: border-box;
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
+.input-row.barcode-shift-row .barcode-input-wrap .barcode-input:focus {
+  outline: none;
+  border-color: #3b82f6;
 }
 
-.data-table thead {
-  background: #f3f4f6;
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-.data-table th {
-  padding: 0.75rem;
-  text-align: left;
-  color: #374151;
-  font-weight: 600;
-  border-bottom: 2px solid #e5e7eb;
+.input-with-icon input {
+  flex: 1;
+  min-width: 0;
+  padding-right: 2.25rem;
 }
 
-.data-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-  color: #6b7280;
-}
-
-.data-table tbody tr:hover {
-  background: #f9fafb;
-}
-
-.data-table tbody tr.selected-row {
-  background: #dbeafe;
-  border-left: 4px solid #3b82f6;
-}
-
-.data-table tbody tr.selected-row:hover {
-  background: #bfdbfe;
-}
-
-.data-table tbody tr:last-child td {
-  border-bottom: none;
+.camera-icon {
+  position: absolute;
+  right: 0.6rem;
+  font-size: 1.1rem;
+  pointer-events: none;
+  user-select: none;
 }
 
 .input-button-section {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   margin-bottom: 0;
 }
 
 .submit-button {
   width: 100%;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
+  min-height: var(--touch-min, 44px);
   background: white;
   color: #3b82f6;
   border: 2px solid #3b82f6;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .submit-button:hover {
@@ -347,10 +313,66 @@
   transform: scale(0.98);
 }
 
+.table-section {
+  background: white;
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.data-table thead {
+  background: #f3f4f6;
+}
+
+.data-table th {
+  padding: 0.35rem 0.4rem;
+  text-align: left;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.data-table tbody tr.selected-row {
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+}
+
+.data-table tbody tr.selected-row:hover {
+  background: #bfdbfe;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .footer-buttons {
   display: flex;
-  gap: 1rem;
-  padding: 1rem 0;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  padding-bottom: max(0.5rem, var(--safe-area-bottom, 0));
   position: sticky;
   bottom: 0;
   background: #f0f4f8;
@@ -360,14 +382,18 @@
 
 .save-button,
 .delete-button {
-  flex: 1;
-  padding: 1rem;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.6rem 0.5rem;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, opacity 0.2s;
+  min-height: var(--touch-min, 44px);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .save-button {
@@ -400,256 +426,58 @@
   transform: scale(0.98);
 }
 
-@media (max-width: 768px) {
+/* 480px 이상 */
+@media (min-width: 480px) {
   .location-content {
-    padding: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    gap: 0.6rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .input-section {
-    padding: 1rem;
-  }
-
-  .input-row {
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .input-row .input-group {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .input-group {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: nowrap;
+    padding: 0.6rem 0.75rem;
   }
 
   .input-group label {
     min-width: 80px;
-    width: auto;
-    flex-shrink: 0;
-    font-size: 0.8rem;
-  }
-
-  .input-with-icon {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .input-group input[type="text"]:not(.input-with-icon input),
-  .input-group input[type="date"],
-  .input-group select {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .barcode-group {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .barcode-group label {
-    min-width: 80px;
-    width: auto;
-    flex-shrink: 0;
-    font-size: 0.8rem;
-  }
-
-  .barcode-input-wrapper {
-    flex: 1;
-    min-width: 0;
-    flex-wrap: nowrap;
-  }
-
-  .barcode-input-wrapper .input-with-icon {
-    flex: 4;
-    min-width: 0;
-  }
-
-  .cnt-label {
-    font-size: 0.75rem;
-    padding: 0.4rem;
-    white-space: nowrap;
-  }
-
-  .cnt-label-input {
-    flex: 0 0 12px;
-    min-width: 10px;
-    font-size: 0.75rem;
-    padding: 0.4rem;
-  }
-
-  .cnt-input {
-    flex: 0 0 15px;
-    min-width: 12px;
-    font-size: 0.75rem;
-  }
-
-  .radio-group {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    flex-wrap: nowrap;
-  }
-
-  .radio-buttons-wrapper {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.75rem;
-    flex: 0 0 auto;
-  }
-
-  .radio-option {
-    flex-shrink: 0;
-  }
-
-  .radio-option label {
-    font-size: 0.75rem;
-  }
-
-  .quantity-input-wrapper {
-    flex: 0 0 auto;
-    gap: 0.25rem;
-  }
-
-  .quantity-input-wrapper label {
-    font-size: 0.75rem;
-  }
-
-  .quantity-input {
     width: 80px;
-    min-width: 60px;
-    padding: 0.4rem;
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
   }
 
   .data-table {
-    font-size: 0.75rem;
-  }
-
-  .data-table th,
-  .data-table td {
-    padding: 0.5rem;
-  }
-
-  .footer-buttons {
-    flex-direction: row;
-    gap: 1rem;
+    font-size: 0.8125rem;
   }
 }
 
-@media (max-width: 480px) {
+/* 768px 이상 */
+@media (min-width: 768px) {
+  .location-header h1 {
+    font-size: 1.15rem;
+  }
+
   .location-content {
-    padding: 0.5rem;
+    max-width: 720px;
+    padding: 0.75rem 1rem;
   }
 
   .input-section {
-    padding: 0.75rem;
+    padding: 0.75rem 1rem;
   }
 
-  .input-row {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .input-row .input-group {
-    flex: 1;
-    width: 100%;
-  }
-
-  .radio-group {
-    padding: 0.5rem;
-    gap: 0.25rem;
-  }
-
-  .radio-buttons-wrapper {
-    gap: 0.5rem;
-  }
-
-  .radio-option input[type="radio"] {
-    width: 16px;
-    height: 16px;
-  }
-
-  .radio-option label {
-    font-size: 0.7rem;
-  }
-
-  .quantity-input-wrapper {
-    gap: 0.25rem;
-  }
-
-  .quantity-input-wrapper label {
-    font-size: 0.7rem;
-  }
-
-  .quantity-input {
-    width: 60px;
-    min-width: 50px;
-    padding: 0.35rem;
-    font-size: 0.7rem;
-  }
-
-  .cnt-label-input {
-    flex: 0 0 11px;
-    min-width: 9px;
-    font-size: 0.7rem;
-    padding: 0.35rem;
-  }
-
-  .cnt-input {
-    flex: 0 0 14px;
-    min-width: 11px;
-    font-size: 0.7rem;
-    padding: 0.35rem;
+  .input-group label {
+    min-width: 90px;
+    width: 90px;
+    font-size: 0.875rem;
   }
 
   .data-table {
-    font-size: 0.7rem;
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    font-size: 0.875rem;
   }
 
-  .data-table thead,
-  .data-table tbody,
-  .data-table tr,
   .data-table th,
   .data-table td {
-    display: block;
-  }
-
-  .data-table thead {
-    display: none;
-  }
-
-  .data-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 0.5rem;
-    background: white;
-  }
-
-  .data-table td {
-    border: none;
-    padding: 0.5rem 0;
-    text-align: right;
-    position: relative;
-    padding-left: 50%;
-  }
-
-  .data-table td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 0;
-    width: 45%;
-    text-align: left;
-    font-weight: 600;
-    color: #374151;
+    padding: 0.5rem 0.6rem;
   }
 }
-
