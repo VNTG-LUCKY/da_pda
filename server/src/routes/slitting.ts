@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { executeQuery, getConnection } from '../config/database';
-import oracledb from 'oracledb';
+import oracledb from '../config/oracledb-types';
 
 const router = Router();
 
@@ -173,6 +173,171 @@ router.get('/equipment/:processCode', async (req: Request, res: Response) => {
       message: 'Failed to fetch equipment',
       error: errMsg,
       ...(errCode != null && { errorCode: errCode })
+    });
+  }
+});
+
+/**
+ * 슬리팅 투입 조회 (불러오기)
+ * DB PROCEDURE: SP_PDA_PR09080_RET
+ * IN: P_BUSI_PLACE('1'), P_INPUT_DATE, P_SHIPT(근무조), P_WC_LIST(작업장)
+ * OUT: O_CURSOR, O_OUT_YN, O_OUT_MSG
+ */
+router.post('/retrieve', async (req: Request, res: Response) => {
+  try {
+    const { inputDate, shift, wcList } = req.body;
+
+    if (!inputDate || !shift || !wcList) {
+      return res.status(400).json({
+        status: 'error',
+        message: '일자, 근무조, 작업장을 모두 선택해주세요.'
+      });
+    }
+
+    // Oracle 프로시저 순서: P_BUSI_PLACE, P_INPUT_DATE, P_SHIPT, P_WC_LIST, O_CURSOR, O_OUT_YN, O_OUT_MSG
+    const inputDateStr = String(inputDate || '').trim().replace(/\//g, '-'); // 2026/02/27 -> 2026-02-27
+
+    const paramsText = [
+      '[API Body]',
+      JSON.stringify({ inputDate, shift, wcList }, null, 2),
+      '',
+      '[Oracle SP_PDA_PR09080_RET 전달 파라미터]',
+      `P_BUSI_PLACE  = '1'`,
+      `P_INPUT_DATE  = '${inputDateStr}'`,
+      `P_SHIPT       = '${shift}'`,
+      `P_WC_LIST     = '${wcList}'`
+    ].join('\n');
+    console.log('--- 조회 파라미터 (오라클 DB 유지보수팀 전달용) ---\n' + paramsText + '\n---');
+
+    const connection = await getConnection();
+
+    try {
+      const result = await connection.execute(
+        `BEGIN
+          SP_PDA_PR09080_RET(
+            :1, :2, :3, :4,
+            :5, :6, :7
+          );
+        END;`,
+        [
+          '1',       // 1 P_BUSI_PLACE
+          inputDateStr, // 2 P_INPUT_DATE (VARCHAR2)
+          shift,     // 3 P_SHIPT (근무조)
+          wcList,    // 4 P_WC_LIST (작업장)
+          { type: oracledb.CURSOR, dir: oracledb.BIND_OUT },           // 5 O_CURSOR
+          { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 10 },  // 6 O_OUT_YN
+          { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 2000 } // 7 O_OUT_MSG
+        ]
+      );
+
+      const outBinds = (result.outBinds as any[]);
+      const outBindsLen = outBinds?.length ?? 0;
+      const outBindsPreview = outBinds?.map((v: any, i: number) => {
+        if (v == null) return null;
+        if (typeof v === 'object' && typeof (v as any).getRows === 'function') return `[ResultSet@${i}]`;
+        return String(v);
+      });
+      console.log('SP_PDA_PR09080_RET outBinds length:', outBindsLen, 'preview:', outBindsPreview);
+
+      // 위치 바인드 시 outBinds: 전체 배열이면 [..., cursor, outYn, outMsg] → 인덱스 4,5,6 / OUT만 배열이면 [cursor, outYn, outMsg] → 0,1,2
+      const cursor = outBindsLen === 3 ? outBinds?.[0] : outBinds?.[4];
+      const outYnRaw = outBindsLen === 3 ? outBinds?.[1] : outBinds?.[5];
+      const outMsgRaw = outBindsLen === 3 ? outBinds?.[2] : outBinds?.[6];
+      const outYn = String(outYnRaw ?? '').trim().toUpperCase();
+      const outMsg = String(outMsgRaw ?? '').trim();
+      console.log('SP_PDA_PR09080_RET parsed OUT:', { outYn, outMsg, cursorPresent: !!cursor });
+
+      const list: any[] = [];
+      if (cursor) {
+        try {
+          let batch: any[];
+          const meta = cursor.metaData || [];
+          const keys = meta.map((m: any) => (m && m.name) ? String(m.name) : '');
+          while ((batch = await cursor.getRows(100)) && batch.length > 0) {
+            for (const row of batch) {
+              const obj: Record<string, any> = {};
+              keys.forEach((key: string, i: number) => { obj[key] = row[i]; });
+              const raw = obj as Record<string, any>;
+              let scanDate = '';
+              let scanTime = '00:00:00';
+              const toLocalDateStr = (d: Date) =>
+                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const toLocalTimeStr = (d: Date) =>
+                `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+              const setFromDate = (val: any) => {
+                if (val == null) return;
+                if (typeof val === 'object' && val instanceof Date) {
+                  scanDate = toLocalDateStr(val);
+                  scanTime = toLocalTimeStr(val);
+                } else {
+                  const str = String(val);
+                  if (str.length >= 10) scanDate = str.slice(0, 10);
+                  if (str.length > 11) scanTime = str.slice(11, 19).replace(/\.\d+$/, '') || '00:00:00';
+                }
+              };
+              if (raw.SCAN_DATE_TIME != null) {
+                setFromDate(raw.SCAN_DATE_TIME);
+              }
+              if (!scanDate && raw.SCAN_DATE != null) setFromDate(raw.SCAN_DATE);
+              if (!scanDate && raw.INPUT_DATE != null) setFromDate(raw.INPUT_DATE);
+              list.push({
+                sequence: String(raw.INPUT_SEQ ?? ''),
+                batchNumber: String(raw.INPUT_BATCH_NO ?? ''),
+                itemCode: String(raw.INPUT_ITEM_CODE ?? ''),
+                scanDate,
+                scanTime
+              });
+            }
+          }
+        } finally {
+          await cursor.close();
+        }
+      }
+
+      console.log('SP_PDA_PR09080_RET row count:', list.length);
+      await connection.close();
+
+      if (outYn !== 'Y') {
+        return res.status(400).json({
+          status: 'error',
+          message: outMsg || '조회 중 오류가 발생했습니다.',
+          data: list,
+          outYn,
+          outMsg
+        });
+      }
+
+      res.json({
+        status: 'success',
+        message: outMsg || '정상적으로 조회되었습니다.',
+        data: list,
+        outYn,
+        outMsg
+      });
+    } catch (procErr: any) {
+      console.error('SP_PDA_PR09080_RET procedure error:', procErr?.message);
+      console.error('Oracle errorNum:', procErr?.errorNum);
+      console.error('Oracle errorCode:', procErr?.code);
+      if (procErr?.stack) console.error(procErr.stack);
+      if (connection) {
+        try {
+          await connection.close();
+        } catch {
+          // ignore
+        }
+      }
+      throw procErr;
+    }
+  } catch (error: any) {
+    console.error('Error retrieving slitting list:', error?.message);
+    console.error('Full error:', error);
+    const errMsg = error?.message ?? 'Unknown error';
+    const errCode = error?.errorNum ?? error?.code;
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to retrieve slitting list',
+      error: errMsg,
+      errorCode: errCode
     });
   }
 });

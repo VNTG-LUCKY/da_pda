@@ -56,8 +56,95 @@
   margin: 0;
   text-align: center;
   pointer-events: none;
-  padding: 0 4rem;
+  padding: 0 5rem;
   box-sizing: border-box;
+}
+
+/* 헤더 우측 전달용 체크박스 */
+.location-oracle-ref-check {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  padding: 0.25rem 0;
+  z-index: 2;
+}
+.location-oracle-ref-check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+.location-oracle-ref-check span {
+  user-select: none;
+}
+
+/* 파라미터/결과 표시 박스 (저장 전달용) */
+.location-params-box {
+  margin: 0 0.75rem 0.5rem;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.location-params-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: #e0f2fe;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0369a1;
+}
+.location-params-copy {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  background: #0ea5e9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+.location-params-copy:hover {
+  background: #0284c7;
+}
+.location-params-copy:active {
+  transform: scale(0.98);
+}
+.location-params-text {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #334155;
+  background: #f8fafc;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 280px;
+  overflow: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.location-result-box {
+  border-color: #a7f3d0;
+}
+.location-result-header {
+  background: #d1fae5;
+  color: #047857;
+}
+.location-result-text {
+  max-height: 320px;
 }
 
 .location-error-banner {
@@ -91,7 +178,7 @@
   overflow: hidden;
 }
 
-.input-group {
+.location-management-container .input-group {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -104,46 +191,50 @@
   background: transparent !important;
 }
 
-.input-group:last-child {
+.location-management-container .input-group:last-child {
   margin-bottom: 0;
 }
 
-/* 적재대스캔, 적재대구분, 적재대번호 라벨 - 빨간 네모 영역, 크게 표시 */
-.input-group label {
-  min-width: 72px;
-  width: 72px;
+/* 적재대스캔, 적재대구분, 적재대번호 라벨 (적재위치등록 전용) */
+.location-management-container .input-group label {
+  min-width: 5.5em;
+  width: 5.5em;
   color: #374151;
   font-weight: 500;
-  font-size: 1.125rem !important;
+  font-size: 1rem !important;
   line-height: 1.4;
   flex-shrink: 0;
+  white-space: nowrap;
+  overflow: visible;
 }
 
-.input-group label.label-red {
+.location-management-container .input-group label.label-red {
   color: #dc2626;
   font-weight: 600;
 }
 
-/* 빨간 네모 영역(적재대스캔, 적재대구분, 적재대번호) 전용 - 폰트 크게, 한 줄 표시 */
-.label-large {
-  font-size: 1.125rem !important;
+/* 적재대스캔, 적재대구분, 적재대번호 전용 */
+.location-management-container .label-large {
+  font-size: 1rem !important;
   white-space: nowrap;
-  min-width: 88px;
-  width: 88px;
+  min-width: 5.5em;
+  width: 5.5em;
+  overflow: visible;
 }
 
-/* 입력 영역: 오른쪽 박스 비율 줄여서 좌측 라벨 한 줄 표시 가능하도록 */
-.input-group .input-with-icon,
-.input-group > select,
-.input-group > input.input-scan {
-  flex: 1 1 0;
+/* 입력 박스: 라벨 뒤 남은 공간을 동일하게 채움 (적재위치등록 전용) */
+.location-management-container .input-group .input-with-icon,
+.location-management-container .input-group > select,
+.location-management-container .input-group > input.input-scan {
+  flex: 1 1 0 !important;
   min-width: 0;
-  max-width: 62%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.input-group input[type="text"]:not(.input-with-icon input),
-.input-group > input.input-scan,
-.input-group select {
+.location-management-container .input-group input[type="text"]:not(.input-with-icon input),
+.location-management-container .input-group > input.input-scan,
+.location-management-container .input-group select {
   padding: 0.28rem 0.45rem;
   padding-right: 1.75rem;
   border: 1px solid #d1d5db;
@@ -156,14 +247,14 @@
   box-sizing: border-box;
 }
 
-.input-group input[type="text"]:focus,
-.input-group > input.input-scan:focus,
-.input-group select:focus {
+.location-management-container .input-group input[type="text"]:focus,
+.location-management-container .input-group > input.input-scan:focus,
+.location-management-container .input-group select:focus {
   outline: none;
   border-color: #3b82f6;
 }
 
-.input-group select {
+.location-management-container .input-group select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -172,7 +263,7 @@
 }
 
 /* 바코드 행: wrapper 제거로 바깥쪽 네모 없음, 입력만 한 줄 배치 */
-.input-group.barcode-group {
+.location-management-container .input-group.barcode-group {
   margin-bottom: 0.25rem;
   border: none !important;
   outline: none !important;
@@ -180,7 +271,7 @@
   background: transparent !important;
 }
 
-.input-group.barcode-group.compact-row {
+.location-management-container .input-group.barcode-group.compact-row {
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -188,17 +279,18 @@
 }
 
 /* 바코드 입력 래퍼: 너비 비율 6:2:2 (바코드:건수:본수합), 오버레이로 손터치 시 키보드 비표시 */
-.input-group.barcode-group.compact-row > .barcode-input-wrapper {
+.location-management-container .input-group.barcode-group.compact-row > .barcode-input-wrapper {
   position: relative;
   flex: 6 6 0;
   min-width: 0;
 }
 
-.input-group.barcode-group.compact-row .barcode-input-inline {
+.location-management-container .input-group.barcode-group.compact-row .barcode-input-inline {
   width: 100%;
   box-sizing: border-box;
 }
 
+/* 스캔/타이핑 가능하도록 터치 차단 해제 (포커스·키 입력 허용) */
 .barcode-tap-blocker {
   position: absolute;
   top: 0;
@@ -206,7 +298,7 @@
   bottom: 0;
   left: 0;
   cursor: default;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 /* 0(건수), 0(본수합) 칸: 너비 비율 6:2:2 중 2:2 */
@@ -347,7 +439,7 @@
 
 .data-table th {
   padding: 0.45rem 0.55rem;
-  text-align: left;
+  text-align: center;
   color: #374151;
   font-weight: 600;
   font-size: 0.9375rem;
@@ -451,26 +543,28 @@
     padding: 0.35rem 0.5rem;
   }
 
-  .input-group {
+  .location-management-container .input-group {
     margin-bottom: 0.2rem;
   }
 
-  .input-group label {
-    min-width: 64px;
-    width: 64px;
-    font-size: 1.125rem !important;
+  .location-management-container .input-group label {
+    min-width: 5.5em;
+    width: 5.5em;
+    font-size: 1rem !important;
+    overflow: visible;
   }
 
-  .label-large {
-    font-size: 1.125rem !important;
+  .location-management-container .label-large {
+    font-size: 1rem !important;
     white-space: nowrap;
-    min-width: 88px;
-    width: 88px;
+    min-width: 5.5em;
+    width: 5.5em;
+    overflow: visible;
   }
 
-  .input-group > input.input-scan,
-  .input-group .barcode-input-inline,
-  .input-group select {
+  .location-management-container .input-group > input.input-scan,
+  .location-management-container .input-group .barcode-input-inline,
+  .location-management-container .input-group select {
     font-size: 0.9375rem;
     min-height: 26px;
     padding: 0.25rem 0.4rem;
@@ -570,32 +664,34 @@
     padding: 0.3rem 0.4rem;
   }
 
-  .input-group {
+  .location-management-container .input-group {
     margin-bottom: 0.18rem;
   }
 
-  .input-group label {
-    min-width: 58px;
-    width: 58px;
+  .location-management-container .input-group label {
+    min-width: 5.5em;
+    width: 5.5em;
     font-size: 1rem !important;
+    overflow: visible;
   }
 
-  .label-large {
+  .location-management-container .label-large {
     font-size: 1rem !important;
     white-space: nowrap;
-    min-width: 82px;
-    width: 82px;
+    min-width: 5.5em;
+    width: 5.5em;
+    overflow: visible;
   }
 
-  .input-group > input.input-scan,
-  .input-group .barcode-input-inline,
-  .input-group select {
+  .location-management-container .input-group > input.input-scan,
+  .location-management-container .input-group .barcode-input-inline,
+  .location-management-container .input-group select {
     font-size: 0.875rem;
     min-height: 26px;
     padding: 0.22rem 0.35rem;
   }
 
-  .input-group.barcode-group.compact-row {
+  .location-management-container .input-group.barcode-group.compact-row {
     gap: 0.25rem;
   }
 

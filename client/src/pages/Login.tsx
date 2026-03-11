@@ -12,13 +12,13 @@ function Login({ setIsAuthenticated }: LoginProps) {
   const [username, setUsername] = useState(() => localStorage.getItem(LAST_USERNAME_KEY) || '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [exited, setExited] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     setError('')
 
-    // 하드코딩된 로그인 정보
     if (username === 'dapda' && password === '1234') {
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem(LAST_USERNAME_KEY, username)
@@ -28,6 +28,34 @@ function Login({ setIsAuthenticated }: LoginProps) {
     } else {
       setError('아이디 또는 비밀번호가 올바르지 않습니다.')
     }
+  }
+
+  const handleExit = () => {
+    const savedUser = localStorage.getItem(LAST_USERNAME_KEY)
+    localStorage.clear()
+    sessionStorage.clear()
+    if (savedUser) localStorage.setItem(LAST_USERNAME_KEY, savedUser)
+    setExited(true)
+    window.close()
+  }
+
+  const handleRestart = () => {
+    window.location.replace(window.location.origin + '/login')
+  }
+
+  if (exited) {
+    return (
+      <div className="login-container">
+        <div className="login-exit-screen">
+          <div className="login-exit-icon">&#x2714;</div>
+          <p className="login-exit-title">프로그램이 종료되었습니다</p>
+          <p className="login-exit-desc">캐시가 삭제되었습니다.<br />뒤로 가기 버튼을 눌러 완전히 닫아주세요.</p>
+          <button type="button" className="login-exit-restart" onClick={handleRestart}>
+            다시 시작
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -70,6 +98,10 @@ function Login({ setIsAuthenticated }: LoginProps) {
           
           <button type="submit" className="login-button">
             로그인
+          </button>
+
+          <button type="button" className="login-exit-button" onClick={handleExit}>
+            프로그램 종료
           </button>
         </form>
       </div>

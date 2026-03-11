@@ -43,6 +43,12 @@ function SlittingInput() {
   const [loadingProcess, setLoadingProcess] = useState(false)
   const [loadingEquipment, setLoadingEquipment] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loadingRetrieve, setLoadingRetrieve] = useState(false)
+  const [retrieveParamsText, setRetrieveParamsText] = useState<string | null>(null)
+  const [retrieveResultText, setRetrieveResultText] = useState<string | null>(null)
+  const [showOracleRefPanel, setShowOracleRefPanel] = useState(() => {
+    try { return localStorage.getItem('slitting_show_oracle_ref') === 'true' } catch { return false }
+  })
 
   // 인증 확인
   useEffect(() => {
@@ -287,18 +293,171 @@ function SlittingInput() {
     }
   }
 
+  const handleRetrieve = async () => {
+    if (!date) {
+      setError('일자를 선택하세요.')
+      return
+    }
+    if (!shift) {
+      setError('근무조를 선택하세요.')
+      return
+    }
+    if (!process) {
+      setError('공정을 선택하세요.')
+      return
+    }
+    if (!equipment) {
+      setError('작업장을 선택하세요.')
+      return
+    }
+    if (loadingRetrieve) return
+
+    const payload = {
+      inputDate: date,
+      shift,
+      wcList: equipment
+    }
+
+    const paramsForOracle = [
+      '[PDA → 서버 API (POST /api/slitting/retrieve) Body]',
+      JSON.stringify(payload, null, 2),
+      '',
+      '[서버 → Oracle SP_PDA_PR09080_RET 전달 파라미터]',
+      `P_BUSI_PLACE  = '1'`,
+      `P_INPUT_DATE  = '${payload.inputDate.replace(/\//g, '-')}'`,
+      `P_SHIPT       = '${payload.shift}'`,
+      `P_WC_LIST     = '${payload.wcList}'`,
+      '',
+      `(전송일시: ${new Date().toLocaleString('ko-KR')})`
+    ].join('\n')
+
+    setRetrieveParamsText(paramsForOracle)
+    setRetrieveResultText(null)
+
+    try {
+      setLoadingRetrieve(true)
+      setError(null)
+      const response = await axios.post('/api/slitting/retrieve', payload)
+      const d = response.data
+
+      const outYn = d.outYn ?? (d.status === 'success' ? 'Y' : 'N')
+      const outMsg = d.outMsg ?? d.message ?? ''
+      const listData = d.data ?? []
+
+      const resultForOracle = [
+        '[SP_PDA_PR09080_RET 반환값 (오라클 DB 유지보수팀 전달용)]',
+        '',
+        `O_OUT_YN   = '${outYn}'`,
+        `O_OUT_MSG  = '${outMsg}'`,
+        '',
+        '[O_CURSOR 결과 목록]',
+        JSON.stringify(listData, null, 2),
+        '',
+        `(수신일시: ${new Date().toLocaleString('ko-KR')})`
+      ].join('\n')
+      setRetrieveResultText(resultForOracle)
+
+      if (d.status === 'success') {
+        const list = (listData || []) as TableRow[]
+        setTableData(list)
+        setSelectedRowIndex(null)
+        setError(null)
+      } else {
+        setError(d.message || d.error || '조회 중 오류가 발생했습니다.')
+      }
+    } catch (err: any) {
+      const errData = err?.response?.data
+      const errMsg = errData?.error ?? errData?.message ?? err?.message ?? '조회 중 오류가 발생했습니다.'
+      setError(`조회 실패: ${errMsg}`)
+      const outYn = errData?.outYn ?? '(미수신)'
+      const outMsg = errData?.outMsg ?? errMsg
+      const listData = errData?.data ?? []
+      const resultForOracle = [
+        '[SP_PDA_PR09080_RET 반환값 (오라클 DB 유지보수팀 전달용)]',
+        '',
+        err?.response ? '(서버 4xx/5xx 응답)' : '(요청 예외 발생)',
+        `O_OUT_YN   = '${outYn}'`,
+        `O_OUT_MSG  = '${outMsg}'`,
+        '',
+        '[O_CURSOR 결과 목록]',
+        JSON.stringify(listData, null, 2),
+        '',
+        `(수신일시: ${new Date().toLocaleString('ko-KR')})`
+      ].join('\n')
+      setRetrieveResultText(resultForOracle)
+    } finally {
+      setLoadingRetrieve(false)
+    }
+  }
+
+  const handleCopyRetrieveParams = () => {
+    if (!retrieveParamsText) return
+    navigator.clipboard.writeText(retrieveParamsText).then(() => {
+      alert('파라미터가 클립보드에 복사되었습니다.')
+    }).catch(() => {
+      alert('복사에 실패했습니다.')
+    })
+  }
+
+  const handleCopyRetrieveResult = () => {
+    if (!retrieveResultText) return
+    navigator.clipboard.writeText(retrieveResultText).then(() => {
+      alert('조회 결과가 클립보드에 복사되었습니다.')
+    }).catch(() => {
+      alert('복사에 실패했습니다.')
+    })
+  }
+
+  const handleOracleRefToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked
+    setShowOracleRefPanel(checked)
+    try { localStorage.setItem('slitting_show_oracle_ref', String(checked)) } catch { /* ignore */ }
+  }
+
   return (
-    <div className="location-management-container">
+    <div className="slitting-input-container">
       <div className="location-header">
         <button className="back-button" onClick={() => navigate('/main')}>
           ← 뒤로
         </button>
         <h1>슬리팅 투입</h1>
+        <label className="slitting-oracle-ref-check">
+          <input
+            type="checkbox"
+            checked={showOracleRefPanel}
+            onChange={handleOracleRefToggle}
+          />
+          <span>전달용</span>
+        </label>
       </div>
       
       {error && (
         <div className="slitting-error-banner">
           {error}
+        </div>
+      )}
+
+      {showOracleRefPanel && retrieveParamsText && (
+        <div className="slitting-params-box">
+          <div className="slitting-params-header">
+            <span>조회 시 전송 파라미터 (오라클 DB 유지보수팀 전달용)</span>
+            <button type="button" className="slitting-params-copy" onClick={handleCopyRetrieveParams}>
+              복사
+            </button>
+          </div>
+          <pre className="slitting-params-text">{retrieveParamsText}</pre>
+        </div>
+      )}
+
+      {showOracleRefPanel && retrieveResultText && (
+        <div className="slitting-params-box slitting-result-box">
+          <div className="slitting-params-header slitting-result-header">
+            <span>조회 결과 SP_PDA_PR09080_RET 반환값 (오라클 DB 유지보수팀 전달용)</span>
+            <button type="button" className="slitting-params-copy" onClick={handleCopyRetrieveResult}>
+              복사
+            </button>
+          </div>
+          <pre className="slitting-params-text slitting-result-text">{retrieveResultText}</pre>
         </div>
       )}
       
@@ -315,8 +474,13 @@ function SlittingInput() {
                 placeholder="일자"
                 className="date-input-narrow"
               />
-              <button type="button" className="btn-search-small" onClick={() => { /* TODO: 조회 API */ }}>
-                조회
+              <button
+                type="button"
+                className="btn-search-small"
+                onClick={handleRetrieve}
+                disabled={loadingRetrieve || !date || !shift || !process || !equipment}
+              >
+                {loadingRetrieve ? '조회 중...' : '조회'}
               </button>
             </div>
           </div>

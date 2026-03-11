@@ -31,6 +31,7 @@ interface RackNumber {
 
 function LocationManagement() {
   const navigate = useNavigate()
+  const loadingRackScanRef = useRef<HTMLInputElement>(null)
   const barcodeInputRef = useRef<HTMLInputElement>(null)
   
   const [loadingRackScan, setLoadingRackScan] = useState('')
@@ -49,6 +50,11 @@ function LocationManagement() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null)
+  const [showOracleRefPanel, setShowOracleRefPanel] = useState(() => {
+    try { return localStorage.getItem('location_show_oracle_ref') === 'true' } catch { return false }
+  })
+  const [saveParamsText, setSaveParamsText] = useState<string | null>(null)
+  const [saveResultText, setSaveResultText] = useState<string | null>(null)
 
   // 적재대구분 목록 조회
   useEffect(() => {
@@ -241,9 +247,16 @@ function LocationManagement() {
     const formattedTime = `${hours}:${minutes}:${seconds}`
 
     // 본수 처리: 본수변경 모드이고 quantity가 입력되어 있으면 그것을 사용, 아니면 바코드의 본수 사용
-    const finalQuantity = (status === 'quantity-change' && quantity.trim() !== '') 
+    const rawQuantity = (status === 'quantity-change' && quantity.trim() !== '') 
       ? quantity.trim() 
       : quantityStr
+    // 수량 개념이므로 앞의 0 제거 (0180 → 180)
+    const finalQuantity = (() => {
+      const s = rawQuantity.trim()
+      if (s === '') return s
+      const n = parseFloat(s)
+      return Number.isNaN(n) ? s : String(n)
+    })()
 
     // 적재대구분 label 찾기
     const selectedRackType = rackTypes.find(type => type.value === loadingRackType)
@@ -320,71 +333,91 @@ function LocationManagement() {
       rackNumberCode: row.rackNumberCode
     }))
 
-    // 프로시저 파라미터 정보 생성
-    const procedureParams = scanDataList.map((item, index) => {
-      const scanDate = item.date // YYYY-MM-DD
-      const dateTime = `${item.date} ${item.time}` // YYYY-MM-DD HH:MM:SS
-      
-      return {
-        '항목': index + 1,
-        'P_BUSI_PLACE': '1',
-        'P_JOB': '1',
-        'P_LOC_LCODE': item.rackTypeCode || '(빈값)',
-        'P_LOC_MCODE': item.rackNumberCode || '(빈값)',
-        'P_BATCH': item.batchNumber || '(빈값)',
-        'P_ITEM_CODE': item.materialCode || '(빈값)',
-        'P_CO_NO': item.orderNumber || '(빈값)',
-        'P_CO_SEAL': item.orderLine || '(빈값)',
-        'P_QTY': item.quantity || '0',
-        'P_SCAN_DATE': scanDate,
-        'P_DATETIME': dateTime,
-        'P_USER': user
-      }
+    const oracleParamsLines = scanDataList.map((item, index) => {
+      const scanDate = item.date
+      const dateTime = `${item.date} ${item.time}`
+      return [
+        `[항목 ${index + 1}]`,
+        `  P_BUSI_PLACE  = '1'`,
+        `  P_JOB         = '1'`,
+        `  P_LOC_LCODE   = '${item.rackTypeCode || ''}'`,
+        `  P_LOC_MCODE   = '${item.rackNumberCode || ''}'`,
+        `  P_BATCH       = '${item.batchNumber || ''}'`,
+        `  P_ITEM_CODE   = '${item.materialCode || ''}'`,
+        `  P_CO_NO       = '${item.orderNumber || ''}'`,
+        `  P_CO_SEAL     = '${item.orderLine || ''}'`,
+        `  P_QTY         = ${item.quantity || '0'}`,
+        `  P_SCAN_DATE   = '${scanDate}'`,
+        `  P_DATETIME    = '${dateTime}'`,
+        `  P_USER        = '${user}'`
+      ].join('\n')
     })
 
-    // 파라미터 정보를 JSON 형식으로 포맷팅 (보기 좋게)
-    const paramsJson = JSON.stringify(procedureParams, null, 2)
-    
-    const fullMessage = `SP_PDA_LOAD_SCAN 프로시저로 전송할 파라미터:\n\n${paramsJson}\n\n이 데이터를 전송하시겠습니까?`
+    const paramsForOracle = [
+      '[PDA → 서버 API (POST /api/location/save-scan-data) Body]',
+      JSON.stringify({ scanDataList, user }, null, 2),
+      '',
+      '[서버 → Oracle SP_PDA_LOAD_SCAN 전달 파라미터 (건별)]',
+      oracleParamsLines.join('\n\n'),
+      '',
+      `(전송일시: ${new Date().toLocaleString('ko-KR')})`
+    ].join('\n')
+    if (showOracleRefPanel) setSaveParamsText(paramsForOracle)
+    setSaveResultText(null)
 
-    // 확인 팝업 표시
-    const confirmed = window.confirm(fullMessage)
-    
-    if (!confirmed) {
-      return // 사용자가 취소한 경우
-    }
-
-    // 프로시저 실행
     try {
       setSaving(true)
       setError(null)
-      
-      // 백엔드 API 호출
+
       const response = await axios.post('/api/location/save-scan-data', {
         scanDataList,
         user
       })
 
-      if (response.data.status === 'success') {
-        // 저장 성공
+      const d = response.data
+      const results = d.results ?? []
+      const resultLines = [
+        '[SP_PDA_LOAD_SCAN 반환값 (오라클 DB 유지보수팀 전달용)]',
+        '',
+        `status   = '${d.status ?? ''}'`,
+        `message  = '${d.message ?? ''}'`,
+        `successCount = ${d.successCount ?? 0}`,
+        `failedCount  = ${d.failedCount ?? 0}`,
+        '',
+        '[건별 P_OUT_YN / P_OUT_MSG]',
+        results.length ? results.map((r: any, i: number) =>
+          `  [${i + 1}] 배치: ${r.batchNumber ?? ''}  P_OUT_YN='${r.outYn ?? ''}'  P_OUT_MSG='${r.outMsg ?? ''}'`
+        ).join('\n') : '(없음)',
+        '',
+        `(수신일시: ${new Date().toLocaleString('ko-KR')})`
+      ].join('\n')
+      if (showOracleRefPanel) setSaveResultText(resultLines)
+
+      if (d.status === 'success') {
         alert('성공적으로 저장되었습니다.')
-        // 테이블 데이터 초기화
         setTableData([])
         setCnt('0')
         setQuantitySum('0')
-        setError(null) // 에러 메시지 초기화
+        setError(null)
       } else {
-        // 저장 실패
-        setError(response.data.message || '저장 중 오류가 발생했습니다.')
+        setError(d.message || '저장 중 오류가 발생했습니다.')
       }
-    } catch (error: any) {
-      console.error('Error saving data:', error)
-      console.error('Error response:', error.response?.data)
-      const errorMessage = error.response?.data?.error 
-        || error.response?.data?.message 
-        || error.message 
-        || '저장 중 오류가 발생했습니다.'
-      setError(`저장 실패: ${errorMessage}`)
+    } catch (err: any) {
+      const errData = err?.response?.data
+      const errMsg = errData?.error ?? errData?.message ?? err?.message ?? '저장 중 오류가 발생했습니다.'
+      setError(`저장 실패: ${errMsg}`)
+      const resultLines = [
+        '[SP_PDA_LOAD_SCAN 반환값 (오라클 DB 유지보수팀 전달용)]',
+        '',
+        '(요청 예외 발생)',
+        `message  = '${errMsg}'`,
+        errData?.results ? '\n[건별 결과]\n' + (errData.results || []).map((r: any, i: number) =>
+          `  [${i + 1}] 배치: ${r.batchNumber ?? ''}  P_OUT_YN='${r.outYn ?? ''}'  P_OUT_MSG='${r.outMsg ?? ''}'`
+        ).join('\n') : '',
+        '',
+        `(수신일시: ${new Date().toLocaleString('ko-KR')})`
+      ].filter(Boolean).join('\n')
+      if (showOracleRefPanel) setSaveResultText(resultLines)
     } finally {
       setSaving(false)
     }
@@ -425,6 +458,111 @@ function LocationManagement() {
     }
   }, [navigate])
 
+  // 화면 진입 시 적재대스캔 입력란에 포커스
+  useEffect(() => {
+    const isAuth = localStorage.getItem('isAuthenticated') === 'true'
+    if (!isAuth) return
+    const t = setTimeout(() => {
+      loadingRackScanRef.current?.focus()
+    }, 100)
+    return () => clearTimeout(t)
+  }, [])
+
+  // 적재대스캔 QR 처리: "구분코드-번호코드" 형식 스캔 시 자동 선택
+  const handleRackScan = async (scanValue: string) => {
+    const trimmed = scanValue.trim()
+    if (!trimmed) return
+
+    const dashIdx = trimmed.indexOf('-')
+    if (dashIdx < 0) {
+      // '-' 없으면 그냥 값만 유지, 자동 선택 안 함
+      return
+    }
+
+    const typeCode = trimmed.substring(0, dashIdx)
+    const numberCode = trimmed.substring(dashIdx + 1)
+
+    setError(null)
+
+    // 1) 적재대구분 자동 선택
+    const matchedType = rackTypes.find(t => t.value === typeCode)
+    if (!matchedType) {
+      setError(`적재대구분 코드 "${typeCode}"를 찾을 수 없습니다.`)
+      return
+    }
+    setLoadingRackType(typeCode)
+    setLoadingRackNumber('')
+
+    // 2) 적재대번호 목록 로드 후 자동 선택
+    try {
+      setLoadingRackNumbers(true)
+      const response = await axios.get(`/api/location/rack-numbers/${encodeURIComponent(typeCode)}`)
+      if (response.data.status === 'success') {
+        const toString = (val: any): string => {
+          if (val === null || val === undefined) return ''
+          if (typeof val === 'string') return val
+          if (typeof val === 'number' || typeof val === 'boolean') return String(val)
+          if (typeof val === 'object') {
+            if (val.CODE_NAME) return String(val.CODE_NAME)
+            if (val.NAME) return String(val.NAME)
+            if (val.CODE) return String(val.CODE)
+            if (val.name) return String(val.name)
+            if (val.label) return String(val.label)
+            if (val.value) return String(val.value)
+            return ''
+          }
+          return String(val)
+        }
+        const rawData = response.data.data || []
+        const numbers = rawData.map((item: any, index: number) => ({
+          value: toString(item.CODE || item.code || item.value),
+          label: toString(item.CODE_NAME || item.NAME || item.name || item.label || item.CODE || item.code || item.value),
+          id: item.id || index + 1
+        }))
+        setRackNumbers(numbers)
+
+        const matchedNumber = numbers.find((n: RackNumber) => n.value === numberCode)
+        if (!matchedNumber) {
+          setError(`적재대번호 코드 "${numberCode}"를 찾을 수 없습니다.`)
+        } else {
+          setLoadingRackNumber(numberCode)
+          // 선택 완료 후 바코드 입력란으로 포커스 이동
+          setTimeout(() => {
+            barcodeInputRef.current?.focus()
+          }, 50)
+        }
+      } else {
+        setRackNumbers([])
+        setError('적재대번호를 불러오는 중 오류가 발생했습니다.')
+      }
+    } catch {
+      setRackNumbers([])
+      setError('적재대번호를 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setLoadingRackNumbers(false)
+    }
+  }
+
+  const handleOracleRefToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked
+    setShowOracleRefPanel(checked)
+    try { localStorage.setItem('location_show_oracle_ref', String(checked)) } catch { /* ignore */ }
+  }
+
+  const handleCopySaveParams = () => {
+    if (!saveParamsText) return
+    navigator.clipboard.writeText(saveParamsText).then(() => {
+      alert('파라미터가 클립보드에 복사되었습니다.')
+    }).catch(() => { alert('복사에 실패했습니다.') })
+  }
+
+  const handleCopySaveResult = () => {
+    if (!saveResultText) return
+    navigator.clipboard.writeText(saveResultText).then(() => {
+      alert('저장 결과가 클립보드에 복사되었습니다.')
+    }).catch(() => { alert('복사에 실패했습니다.') })
+  }
+
   return (
     <div className="location-management-container">
       <div className="location-header">
@@ -432,11 +570,39 @@ function LocationManagement() {
           BACK
         </button>
         <h1>적재위치 등록</h1>
+        <label className="location-oracle-ref-check">
+          <input
+            type="checkbox"
+            checked={showOracleRefPanel}
+            onChange={handleOracleRefToggle}
+          />
+          <span>전달용</span>
+        </label>
       </div>
       
       {error && (
         <div className="location-error-banner">
           {error}
+        </div>
+      )}
+
+      {showOracleRefPanel && saveParamsText && (
+        <div className="location-params-box">
+          <div className="location-params-header">
+            <span>저장 시 전송 파라미터 (오라클 DB 유지보수팀 전달용)</span>
+            <button type="button" className="location-params-copy" onClick={handleCopySaveParams}>복사</button>
+          </div>
+          <pre className="location-params-text">{saveParamsText}</pre>
+        </div>
+      )}
+
+      {showOracleRefPanel && saveResultText && (
+        <div className="location-params-box location-result-box">
+          <div className="location-params-header location-result-header">
+            <span>저장 결과 SP_PDA_LOAD_SCAN 반환값 (오라클 DB 유지보수팀 전달용)</span>
+            <button type="button" className="location-params-copy" onClick={handleCopySaveResult}>복사</button>
+          </div>
+          <pre className="location-params-text location-result-text">{saveResultText}</pre>
         </div>
       )}
       
@@ -445,11 +611,18 @@ function LocationManagement() {
           <div className="input-group">
             <label htmlFor="loadingRackScan" className="label-large">적재대스캔</label>
             <input
+              ref={loadingRackScanRef}
               type="text"
               id="loadingRackScan"
               className="input-scan"
               value={loadingRackScan}
               onChange={(e) => setLoadingRackScan(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleRackScan(loadingRackScan)
+                }
+              }}
               placeholder="적재대스캔"
             />
           </div>
@@ -491,7 +664,7 @@ function LocationManagement() {
               disabled={!loadingRackType || loadingRackNumbers}
             >
               <option value="">
-                {loadingRackNumbers ? '로딩 중...' : loadingRackType ? '적재대번호를 선택하세요.' : '적재대구분을 먼저 선택하세요.'}
+                {loadingRackNumbers ? '로딩 중...' : loadingRackType ? '적재대번호를 선택하세요.' : '구분 우선 선택'}
               </option>
               {rackNumbers.map((number) => (
                 <option key={number.id} value={String(number.value || '')}>
@@ -577,7 +750,7 @@ function LocationManagement() {
                 <th>자재코드</th>
                 <th>본수</th>
                 <th>수주번호</th>
-                <th>수주행번</th>
+                <th>행번</th>
                 <th>적재대구분</th>
                 <th>적재대번호</th>
               </tr>
@@ -591,7 +764,7 @@ function LocationManagement() {
                   <td data-label="자재코드">-</td>
                   <td data-label="본수">-</td>
                   <td data-label="수주번호">-</td>
-                  <td data-label="수주행번">-</td>
+                  <td data-label="행번">-</td>
                   <td data-label="적재대구분">-</td>
                   <td data-label="적재대번호">-</td>
                 </tr>
@@ -609,7 +782,7 @@ function LocationManagement() {
                     <td data-label="자재코드">{row.materialCode}</td>
                     <td data-label="본수">{row.quantity}</td>
                     <td data-label="수주번호">{row.orderNumber}</td>
-                    <td data-label="수주행번">{row.orderLine}</td>
+                    <td data-label="행번">{row.orderLine}</td>
                     <td data-label="적재대구분">{row.rackType}</td>
                     <td data-label="적재대번호">{row.rackNumber}</td>
                   </tr>

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { initializePool, closePool, executeQuery } from './config/database';
 import locationRoutes from './routes/location';
 import slittingRoutes from './routes/slitting';
+import loadingRoutes from './routes/loading';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/location', locationRoutes);
 app.use('/api/slitting', slittingRoutes);
+app.use('/api/loading', loadingRoutes);
 
 // Routes
 app.get('/', (req: Request, res: Response) => {

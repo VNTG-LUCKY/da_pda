@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DA PDA</string>
+    <string name="title_activity_main">DA PDA</string>
+    <string name="package_name">com.dongasteel.dapda</string>
+    <string name="custom_url_scheme">com.dongasteel.dapda</string>
+</resources>

@@ -1,5 +1,5 @@
-/* 슬리팅 투입 - PDA/휴대폰 모바일 기본 */
-.location-management-container {
+/* 슬리팅 투입 - PDA/휴대폰 모바일 기본 (전용 컨테이너로 적재위치등록 CSS와 분리) */
+.slitting-input-container {
   min-height: 100vh;
   min-height: 100dvh;
   background: #f0f4f8;
@@ -55,8 +55,31 @@
   margin: 0;
   text-align: center;
   pointer-events: none;
-  padding: 0 4rem;
+  padding: 0 5rem;
   box-sizing: border-box;
+}
+
+.slitting-oracle-ref-check {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+  padding: 0.25rem 0;
+}
+.slitting-oracle-ref-check input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+.slitting-oracle-ref-check span {
+  user-select: none;
 }
 
 /* 에러 배너 - 모바일 공통 스타일 */
@@ -66,6 +89,70 @@
   color: #dc2626;
   text-align: center;
   font-size: 0.8125rem;
+}
+
+/* 조회 파라미터 표시 (복사용) */
+.slitting-params-box {
+  margin: 0 0.75rem 0.5rem;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.slitting-params-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: #e0f2fe;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0369a1;
+}
+.slitting-params-copy {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  background: #0ea5e9;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+.slitting-params-copy:hover {
+  background: #0284c7;
+}
+.slitting-params-copy:active {
+  transform: scale(0.98);
+}
+.slitting-params-text {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #334155;
+  background: #f8fafc;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 280px;
+  overflow: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 조회 결과 박스 (반환값 표시) */
+.slitting-result-box {
+  border-color: #a7f3d0;
+}
+.slitting-result-header {
+  background: #d1fae5;
+  color: #047857;
+}
+.slitting-result-text {
+  max-height: 320px;
 }
 
 .location-content {
@@ -88,30 +175,56 @@
   box-sizing: border-box;
 }
 
-.input-group {
+.slitting-input-container .input-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.15rem;
   margin-bottom: 0.5rem;
   flex-wrap: nowrap;
   min-width: 0;
 }
 
-.input-group:last-child {
+.slitting-input-container .input-group:last-child {
   margin-bottom: 0;
 }
 
-.input-group.input-group-barcode {
+.slitting-input-container .input-group.input-group-barcode {
   margin-bottom: 0.5rem;
 }
 
-.input-group label {
-  min-width: 70px;
-  width: 70px;
+/* 일자/공정/작업장/근무조 라벨 통일: 동일 폰트 크기·너비로 좌측 정렬 */
+.slitting-input-container .input-group label {
+  min-width: 3.5em;
+  width: 3.5em;
   color: #374151;
   font-weight: 500;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   flex-shrink: 0;
+}
+
+.slitting-input-container .input-section .input-group {
+  gap: 0.15rem;
+}
+.slitting-input-container .input-section .input-group label {
+  min-width: 3.5em;
+  width: 3.5em;
+  font-size: 0.875rem;
+}
+.slitting-input-container .input-section .input-row .input-group {
+  gap: 0.15rem;
+}
+.slitting-input-container .input-section .input-row .input-group label {
+  min-width: 3.5em;
+  width: 3.5em;
+  font-size: 0.875rem;
+}
+.slitting-input-container .input-section .input-row.barcode-shift-row .input-group.shift-left {
+  gap: 0.15rem;
+}
+.slitting-input-container .input-section .input-row.barcode-shift-row .input-group.shift-left label {
+  min-width: 3.5em;
+  width: 3.5em;
+  font-size: 0.875rem;
 }
 
 .input-group label.label-red {
@@ -236,8 +349,8 @@
 }
 
 .input-row.barcode-shift-row .input-group.shift-left {
-  flex: 0 0 auto;
-  min-width: 6rem;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .input-row.barcode-shift-row .barcode-input-wrap.barcode-right {
@@ -441,9 +554,16 @@
   }
 
   .input-group label {
-    min-width: 80px;
-    width: 80px;
+    min-width: 3.5em;
+    width: 3.5em;
     font-size: 0.8125rem;
+  }
+
+  .slitting-input-container .input-section .input-group label,
+  .slitting-input-container .input-section .input-row .input-group label {
+    min-width: 3.5em;
+    width: 3.5em;
+    font-size: 0.875rem;
   }
 
   .data-table {
@@ -467,8 +587,15 @@
   }
 
   .input-group label {
-    min-width: 90px;
-    width: 90px;
+    min-width: 3.5em;
+    width: 3.5em;
+    font-size: 0.875rem;
+  }
+
+  .slitting-input-container .input-section .input-group label,
+  .slitting-input-container .input-section .input-row .input-group label {
+    min-width: 3.5em;
+    width: 3.5em;
     font-size: 0.875rem;
   }
 

@@ -125,6 +125,92 @@
   transform: scale(0.98);
 }
 
+.login-exit-button {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  min-height: var(--touch-min, 44px);
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.login-exit-button:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.login-exit-button:active {
+  transform: scale(0.98);
+}
+
+/* 종료 화면 */
+.login-exit-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.login-exit-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #86efac;
+  margin-bottom: 1.25rem;
+}
+
+.login-exit-title {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+}
+
+.login-exit-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+}
+
+.login-exit-restart {
+  padding: 0.75rem 2rem;
+  min-height: var(--touch-min, 44px);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s;
+}
+
+.login-exit-restart:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.login-exit-restart:active {
+  transform: scale(0.98);
+}
+
 /* 태블릿 이상에서만 폼 너비 제한 */
 @media (min-width: 480px) {
   .login-form {

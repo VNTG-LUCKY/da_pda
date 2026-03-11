@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { executeQuery, getConnection } from '../config/database';
-import oracledb from 'oracledb';
+import oracledb from '../config/oracledb-types';
 
 const router = Router();
 

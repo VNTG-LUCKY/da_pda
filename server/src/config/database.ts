@@ -1,4 +1,12 @@
-import oracledb from 'oracledb';
+import oracledb, {
+  type ConnectionAttributes,
+  type PoolAttributes,
+  type Pool,
+  type Connection,
+  type ExecuteOptions,
+  type BindParameters,
+  type Result,
+} from './oracledb-types';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -29,14 +37,14 @@ console.log('  Password (hardcoded):', dbPassword);
 console.log('  Password length:', dbPassword.length);
 console.log('  Connect String:', dbConnectString);
 
-const dbConfig: oracledb.ConnectionAttributes = {
+const dbConfig: ConnectionAttributes = {
   user: dbUser,
   password: dbPassword,
   connectString: dbConnectString,
 };
 
 // 연결 풀 설정
-const poolConfig: oracledb.PoolAttributes = {
+const poolConfig: PoolAttributes = {
   user: dbConfig.user,
   password: dbConfig.password,
   connectString: dbConfig.connectString,
@@ -47,7 +55,7 @@ const poolConfig: oracledb.PoolAttributes = {
   queueTimeout: 60000,  // 연결 대기 시간
 };
 
-let pool: oracledb.Pool | null = null;
+let pool: Pool | null = null;
 
 /**
  * 데이터베이스 연결 풀 초기화
@@ -94,7 +102,7 @@ export async function closePool(): Promise<void> {
 /**
  * 데이터베이스 연결 가져오기
  */
-export async function getConnection(): Promise<oracledb.Connection> {
+export async function getConnection(): Promise<Connection> {
   if (!pool) {
     // 풀이 없으면 새로 초기화 시도
     console.log('Pool not initialized, attempting to initialize...');
@@ -116,12 +124,12 @@ export async function getConnection(): Promise<oracledb.Connection> {
  */
 export async function executeQuery<T = any>(
   sql: string,
-  binds?: oracledb.BindParameters,
-  options?: oracledb.ExecuteOptions
-): Promise<oracledb.Result<T>> {
+  binds?: BindParameters,
+  options?: ExecuteOptions
+): Promise<Result<T>> {
   const connection = await getConnection();
   try {
-    const executeOptions: oracledb.ExecuteOptions = {
+    const executeOptions: ExecuteOptions = {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
       ...options,
     };
@@ -143,7 +151,7 @@ export async function executeQuery<T = any>(
  * 트랜잭션 실행 헬퍼 함수
  */
 export async function executeTransaction<T>(
-  callback: (connection: oracledb.Connection) => Promise<T>
+  callback: (connection: Connection) => Promise<T>
 ): Promise<T> {
   const connection = await getConnection();
   try {

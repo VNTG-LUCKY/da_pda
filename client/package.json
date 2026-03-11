@@ -11,6 +11,9 @@
     "start": "node start-preview.cjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "axios": "^1.6.2",
     "express": "^4.18.2",
     "http-proxy-middleware": "^2.0.6",
@@ -31,17 +34,3 @@
     "vite": "^5.0.8"
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
