@@ -178,7 +178,7 @@ router.get('/equipment/:processCode', async (req: Request, res: Response) => {
 });
 
 /**
- * 슬리팅 투입 조회 (불러오기)
+ * 스켈프 투입 조회 (불러오기)
  * DB PROCEDURE: SP_PDA_PR09080_RET
  * IN: P_BUSI_PLACE('1'), P_INPUT_DATE, P_SHIPT(근무조), P_WC_LIST(작업장)
  * OUT: O_CURSOR, O_OUT_YN, O_OUT_MSG
@@ -343,7 +343,7 @@ router.post('/retrieve', async (req: Request, res: Response) => {
 });
 
 /**
- * 슬리팅 투입 데이터 저장
+ * 스켈프 투입 데이터 저장
  * DB PROCEDURE: SP_PDA_PR09080_IN
  * P_BUSI_PLACE: '1' 고정, P_JOB: 'S' 고정
  * P_INPUT_DATE: 선택일자, P_PROC_CODE: 공정코드, P_INPUT_WC_ID: 작업장코드

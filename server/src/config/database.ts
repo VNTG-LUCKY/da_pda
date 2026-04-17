@@ -8,8 +8,13 @@ import oracledb, {
   type Result,
 } from './oracledb-types';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envFile = `.env.${nodeEnv}`;
+dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+dotenv.config(); // .env를 fallback으로 로드
+console.log(`[DB] Loading env from: ${envFile} (NODE_ENV=${nodeEnv})`);
 
 // Oracle Client 모드 설정 (Thick 모드 사용)
 // Oracle Instant Client가 설치되어 있으면 자동으로 Thick 모드 사용
@@ -23,19 +28,15 @@ try {
   console.warn('Note: Some Oracle versions may require Thick mode (Oracle Instant Client)');
 }
 
-// Oracle DB 연결 설정
-// .env 파일에서 비밀번호 로드
-// 주의: .env 파일에서 # 문자가 주석으로 해석될 수 있으므로 하드코딩 사용
-const dbUser = process.env.DB_USER || 'daerp';
-// 직접 연결 테스트에서 성공한 하드코딩된 비밀번호 사용
-const dbPassword = 'daerp#2018';
-const dbConnectString = process.env.DB_CONNECTION_STRING || '172.17.1.56:1521/DAERP';
+// Oracle DB 연결 설정 (.env / .env.<NODE_ENV>에서만 로드 — 기본값에 자격 증명을 넣지 않음)
+const dbUser = process.env.DB_USER || '';
+const dbPassword = process.env.DB_PASSWORD || '';
+const dbConnectString = process.env.DB_CONNECTION_STRING || '';
 
-console.log('DB Config loaded:');
+console.log('[DB] Config loaded:');
 console.log('  User:', dbUser);
-console.log('  Password (hardcoded):', dbPassword);
-console.log('  Password length:', dbPassword.length);
 console.log('  Connect String:', dbConnectString);
+console.log('  ENV:', nodeEnv);
 
 const dbConfig: ConnectionAttributes = {
   user: dbUser,

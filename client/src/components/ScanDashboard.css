@@ -1,0 +1,498 @@
+/* ── ScanDashboard 모달 ─────────────────────────────────────── */
+.sdb-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;   /* 아래에서 올라오는 bottom-sheet 스타일 */
+  justify-content: center;
+  padding: 0;
+}
+
+.sdb-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  background: #ffffff;
+  border-radius: 18px 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.18);
+  animation: sdb-slide-up 0.22s ease-out;
+}
+
+@keyframes sdb-slide-up {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── 헤더 ─────────────────────────────────────────────────────── */
+.sdb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.sdb-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.sdb-header-icon {
+  color: #3b82f6;
+}
+
+.sdb-close-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.sdb-close-btn:hover { background: #e2e8f0; }
+
+/* ── 스크롤 바디 ──────────────────────────────────────────────── */
+.sdb-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 14px 16px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sdb-date-label {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── 요약 카드 ────────────────────────────────────────────────── */
+.sdb-summary-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.sdb-stat-card {
+  flex: 1;
+  border-radius: 10px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.sdb-stat-num {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.sdb-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sdb-stat-total   { background: #f1f5f9; }
+.sdb-stat-total   .sdb-stat-num   { color: #1e293b; }
+.sdb-stat-total   .sdb-stat-label { color: #64748b; }
+
+.sdb-stat-success { background: #f0fdf4; }
+.sdb-stat-success .sdb-stat-num   { color: #16a34a; }
+.sdb-stat-success .sdb-stat-label { color: #15803d; }
+
+.sdb-stat-error   { background: #fef2f2; }
+.sdb-stat-error   .sdb-stat-num   { color: #dc2626; }
+.sdb-stat-error   .sdb-stat-label { color: #b91c1c; }
+
+/* 성공률 원형 */
+.sdb-rate-wrap {
+  position: relative;
+  width: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sdb-rate-svg {
+  width: 60px;
+  height: 60px;
+  transform: rotate(-90deg);
+}
+
+.sdb-rate-bg {
+  fill: none;
+  stroke: #e2e8f0;
+  stroke-width: 3.8;
+}
+
+.sdb-rate-fg {
+  fill: none;
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.4s ease;
+}
+
+.sdb-rate-num {
+  position: absolute;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* ── 페이지별 카드 ────────────────────────────────────────────── */
+.sdb-page-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sdb-page-card {
+  border: 1.5px solid;
+  border-radius: 10px;
+  padding: 10px 12px 8px;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  user-select: none;
+}
+
+.sdb-page-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sdb-page-card:active {
+  transform: translateY(0);
+}
+
+.sdb-page-card--active {
+  transform: translateY(-1px);
+}
+
+.sdb-page-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.sdb-page-tap-hint {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.sdb-page-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sdb-page-nums {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.sdb-page-ok, .sdb-page-err {
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.sdb-page-ok  small { font-size: 10px; font-weight: 500; opacity: 0.8; }
+.sdb-page-err small { font-size: 10px; font-weight: 500; color: #94a3b8; }
+.sdb-page-err { color: #94a3b8; }
+
+/* 진행 바 */
+.sdb-page-bar-wrap {
+  height: 5px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.sdb-page-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  min-width: 0;
+}
+
+/* ── 이력 헤더 ────────────────────────────────────────────────── */
+.sdb-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sdb-history-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.sdb-filter-group {
+  display: flex;
+  gap: 4px;
+}
+
+.sdb-filter-btn {
+  padding: 4px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sdb-filter-btn.active {
+  background: #1e3a5f;
+  border-color: #1e3a5f;
+  color: #ffffff;
+}
+
+/* 선택된 페이지 칩 + 전체 보기 버튼 행 */
+.sdb-page-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sdb-active-page-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1.5px solid;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sdb-page-filter-btn {
+  padding: 4px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sdb-page-filter-btn.active {
+  background: #334155;
+  border-color: #334155;
+  color: #ffffff;
+}
+
+/* ── 이력 목록 ────────────────────────────────────────────────── */
+.sdb-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 60px;
+}
+
+.sdb-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  padding: 24px 0;
+}
+
+.sdb-history-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  min-width: 0;
+}
+
+.sdb-history-item.sdb-item-error {
+  background: #fff5f5;
+  border-color: #fecaca;
+}
+
+.sdb-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sdb-item-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sdb-item-batch {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sdb-item-errmsg {
+  font-size: 10px;
+  color: #dc2626;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sdb-item-page {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sdb-item-time {
+  font-size: 10px;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 푸터 ─────────────────────────────────────────────────────── */
+.sdb-footer {
+  padding: 10px 0 8px;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.sdb-clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sdb-clear-btn:hover { background: #fee2e2; }
+
+.sdb-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sdb-confirm-msg {
+  font-size: 13px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.sdb-confirm-yes {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 7px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sdb-confirm-no {
+  padding: 6px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── 다크 모드 ─────────────────────────────────────────────────── */
+.sdb-overlay.dark .sdb-modal             { background: #1e293b; }
+.sdb-overlay.dark .sdb-header            { border-color: #334155; }
+.sdb-overlay.dark .sdb-header-left       { color: #f1f5f9; }
+.sdb-overlay.dark .sdb-close-btn         { background: #334155; color: #94a3b8; }
+.sdb-overlay.dark .sdb-close-btn:hover   { background: #475569; }
+.sdb-overlay.dark .sdb-date-label        { color: #94a3b8; }
+
+.sdb-overlay.dark .sdb-stat-total        { background: #334155; }
+.sdb-overlay.dark .sdb-stat-total  .sdb-stat-num   { color: #f1f5f9; }
+.sdb-overlay.dark .sdb-stat-total  .sdb-stat-label { color: #94a3b8; }
+.sdb-overlay.dark .sdb-stat-success      { background: #14532d; }
+.sdb-overlay.dark .sdb-stat-success .sdb-stat-num  { color: #4ade80; }
+.sdb-overlay.dark .sdb-stat-success .sdb-stat-label { color: #86efac; }
+.sdb-overlay.dark .sdb-stat-error        { background: #450a0a; }
+.sdb-overlay.dark .sdb-stat-error .sdb-stat-num    { color: #f87171; }
+.sdb-overlay.dark .sdb-stat-error .sdb-stat-label  { color: #fca5a5; }
+.sdb-overlay.dark .sdb-rate-bg           { stroke: #334155; }
+
+.sdb-overlay.dark .sdb-page-card         { background: #0f172a !important; }
+.sdb-overlay.dark .sdb-page-card:hover   { box-shadow: 0 3px 10px rgba(0,0,0,0.4); }
+.sdb-overlay.dark .sdb-page-bar-wrap     { background: rgba(255,255,255,0.1); }
+.sdb-overlay.dark .sdb-page-tap-hint     { opacity: 0.6; }
+
+.sdb-overlay.dark .sdb-history-title     { color: #f1f5f9; }
+.sdb-overlay.dark .sdb-filter-btn        { background: #334155; border-color: #475569; color: #94a3b8; }
+.sdb-overlay.dark .sdb-filter-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.sdb-overlay.dark .sdb-page-filter-btn   { background: #334155; border-color: #475569; color: #94a3b8; }
+.sdb-overlay.dark .sdb-page-filter-btn.active { background: #475569; border-color: #64748b; color: #e2e8f0; }
+
+.sdb-overlay.dark .sdb-history-item      { background: #334155; border-color: #475569; }
+.sdb-overlay.dark .sdb-item-error        { background: #450a0a; border-color: #7f1d1d; }
+.sdb-overlay.dark .sdb-item-batch        { color: #f1f5f9; }
+.sdb-overlay.dark .sdb-item-time         { color: #64748b; }
+.sdb-overlay.dark .sdb-empty             { color: #64748b; }
+
+.sdb-overlay.dark .sdb-clear-btn         { background: #450a0a; border-color: #7f1d1d; color: #f87171; }
+.sdb-overlay.dark .sdb-clear-btn:hover   { background: #5a1212; }
+.sdb-overlay.dark .sdb-confirm-msg       { color: #f87171; }
+.sdb-overlay.dark .sdb-confirm-no        { background: #334155; border-color: #475569; color: #94a3b8; }

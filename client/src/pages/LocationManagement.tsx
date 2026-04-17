@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import type { FontSizeLevel } from '../App'
+import { useScanFeedback } from '../hooks/useScanFeedback'
+import { addScanRecord } from '../utils/scanHistory'
+import ScanDashboard from '../components/ScanDashboard'
+import SaveHistoryModal from '../components/SaveHistoryModal'
 import './LocationManagement.css'
 
 interface TableRow {
@@ -8,6 +13,7 @@ interface TableRow {
   time: string
   batchNumber: string
   materialCode: string
+  length: string
   quantity: string
   orderNumber: string
   orderLine: string
@@ -29,11 +35,37 @@ interface RackNumber {
   id: number
 }
 
-function LocationManagement() {
+interface LocationManagementProps {
+  isDarkMode: boolean
+  setIsDarkMode: (value: boolean) => void
+  isWakeLock: boolean
+  setIsWakeLock: (value: boolean) => void
+  fontSizeLevel: FontSizeLevel
+  setFontSizeLevel: (value: FontSizeLevel) => void
+  barcodeDelay: number
+  setBarcodeDelay: (value: number) => void
+}
+
+function LocationManagement({ isDarkMode, setIsDarkMode, isWakeLock, setIsWakeLock, fontSizeLevel, setFontSizeLevel }: LocationManagementProps) {
   const navigate = useNavigate()
   const loadingRackScanRef = useRef<HTMLInputElement>(null)
   const barcodeInputRef = useRef<HTMLInputElement>(null)
-  
+  const optionsRef = useRef<HTMLDivElement>(null)
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false)
+  const [emailForward, setEmailForward] = useState(() => {
+    try { return localStorage.getItem('pda_email_forward') === 'true' } catch { return false }
+  })
+  const emailSendingRef = useRef(false)
+  const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
+    try { return localStorage.getItem('pda_sound_enabled') === 'true' } catch { return false }
+  })
+  const [isVibrationEnabled, setIsVibrationEnabled] = useState(() => {
+    try { return localStorage.getItem('pda_vibration_enabled') === 'true' } catch { return false }
+  })
+  const { playSuccess, playError } = useScanFeedback(isSoundEnabled, isVibrationEnabled)
+  const [showDashboard, setShowDashboard] = useState(false)
+  const [showSaveHistory, setShowSaveHistory] = useState(false)
+
   const [loadingRackScan, setLoadingRackScan] = useState('')
   const [loadingRackType, setLoadingRackType] = useState('')
   const [loadingRackNumber, setLoadingRackNumber] = useState('')
@@ -42,6 +74,20 @@ function LocationManagement() {
   const [quantitySum, setQuantitySum] = useState('0')
   const [status, setStatus] = useState<'normal' | 'quantity-change'>('normal')
   const [quantity, setQuantity] = useState('')
+  const [showBarcodeKeyboard, setShowBarcodeKeyboard] = useState(false)
+
+  const focusBarcodeNoKeyboard = () => {
+    setShowBarcodeKeyboard(false)
+    if (barcodeInputRef.current) {
+      barcodeInputRef.current.setAttribute('inputmode', 'none')
+    }
+    setTimeout(() => {
+      if (barcodeInputRef.current) {
+        barcodeInputRef.current.setAttribute('inputmode', 'none')
+        barcodeInputRef.current.focus()
+      }
+    }, 0)
+  }
   const [tableData, setTableData] = useState<TableRow[]>([])
   const [rackTypes, setRackTypes] = useState<RackType[]>([])
   const [rackNumbers, setRackNumbers] = useState<RackNumber[]>([])
@@ -192,26 +238,40 @@ function LocationManagement() {
     // 적재대구분과 적재대번호가 선택되었는지 확인
     if (!loadingRackType || !loadingRackNumber) {
       setError('적재대구분과 적재대번호를 먼저 선택해주세요.')
+      playError()
       return
     }
 
     // 바코드가 입력되었는지 확인
     if (!barcode || barcode.trim() === '') {
       setError('바코드를 입력해주세요.')
+      playError()
       return
     }
 
     // 바코드 형식 검증 및 파싱
-    // 형식: 배치번호-자재코드-본수-수주번호-수주행번
-    // 예: HG00160205-DS100179-0180-15400-1
+    // 형식: 배치번호-자재코드-본수-수주번호-수주행번[-길이]
+    // 예(5파트): HG00160205-DS100179-0180-15400-1
+    // 예(6파트): HG00160200-DP200800-0120-15400-1-6.84
     const barcodeParts = barcode.trim().split('-')
     
-    if (barcodeParts.length !== 5) {
-      setError('바코드 형식이 올바르지 않습니다. (형식: 배치번호-자재코드-본수-수주번호-수주행번)')
+    if (barcodeParts.length !== 5 && barcodeParts.length !== 6) {
+      setError('바코드 형식이 올바르지 않습니다. (형식: 배치번호-자재코드-본수-수주번호-수주행번[-길이])')
+      addScanRecord({ page: 'location', batchNo: barcode.trim(), result: 'error', errorMsg: '형식 오류' })
+      playError()
       return
     }
 
-    const [batchNumber, materialCode, quantityStr, orderNumber, orderLine] = barcodeParts
+    const [batchNumber, materialCode, quantityStr, orderNumber, orderLine, lengthStr = ''] = barcodeParts
+
+    if (batchNumber.length !== 10) {
+      setError(`배치번호는 10자리여야 합니다. (입력값: "${batchNumber}", ${batchNumber.length}자리)`)
+      addScanRecord({ page: 'location', batchNo: batchNumber, result: 'error', errorMsg: '배치번호 자리수 오류' })
+      playError()
+      setBarcode('')
+      focusBarcodeNoKeyboard()
+      return
+    }
 
     // 중복 체크: 동일한 배치번호와 자재코드가 이미 테이블에 있는지 확인
     const isDuplicate = tableData.some(
@@ -220,14 +280,10 @@ function LocationManagement() {
 
     if (isDuplicate) {
       setError('이미 적재위치에 등록된 배치번호입니다')
-      // 바코드 입력 필드 초기화
+      addScanRecord({ page: 'location', batchNo: batchNumber, result: 'error', errorMsg: '중복 배치번호' })
+      playError()
       setBarcode('')
-      // 바코드 입력 필드로 포커스 이동
-      if (barcodeInputRef.current) {
-        setTimeout(() => {
-          barcodeInputRef.current?.focus()
-        }, 0)
-      }
+      focusBarcodeNoKeyboard()
       return
     }
 
@@ -268,12 +324,21 @@ function LocationManagement() {
     const rackNumberLabel = selectedRackNumber ? selectedRackNumber.label : loadingRackNumber
     const rackNumberCode = loadingRackNumber // 코드값은 이미 선택된 value
 
+    // 길이 정규화 (앞뒤 공백 제거, 숫자이면 불필요한 0 제거)
+    const finalLength = (() => {
+      const s = lengthStr.trim()
+      if (s === '') return ''
+      const n = parseFloat(s)
+      return Number.isNaN(n) ? s : String(n)
+    })()
+
     // 테이블에 추가할 새 행 데이터
     const newRow: TableRow = {
       date: formattedDate,
       time: formattedTime,
       batchNumber: batchNumber,
       materialCode: materialCode,
+      length: finalLength,
       quantity: finalQuantity,
       orderNumber: orderNumber,
       orderLine: orderLine,
@@ -285,6 +350,8 @@ function LocationManagement() {
 
     // 테이블 데이터에 추가 (최근 입력이 LIST 하단에 나오도록)
     setTableData(prev => [...prev, newRow])
+    addScanRecord({ page: 'location', batchNo: batchNumber, result: 'success' })
+    playSuccess()
     
     // 에러 메시지 초기화
     setError(null)
@@ -298,11 +365,7 @@ function LocationManagement() {
     }
     
     // 바코드 입력 필드로 다시 포커스 이동
-    if (barcodeInputRef.current) {
-      setTimeout(() => {
-        barcodeInputRef.current?.focus()
-      }, 0)
-    }
+    focusBarcodeNoKeyboard()
   }
 
   const handleSave = async () => {
@@ -326,6 +389,7 @@ function LocationManagement() {
       time: row.time,
       batchNumber: row.batchNumber,
       materialCode: row.materialCode,
+      length: row.length,
       quantity: row.quantity,
       orderNumber: row.orderNumber,
       orderLine: row.orderLine,
@@ -345,9 +409,10 @@ function LocationManagement() {
         `  P_BATCH       = '${item.batchNumber || ''}'`,
         `  P_ITEM_CODE   = '${item.materialCode || ''}'`,
         `  P_CO_NO       = '${item.orderNumber || ''}'`,
-        `  P_CO_SEAL     = '${item.orderLine || ''}'`,
+        `  P_CO_SERL     = '${item.orderLine || ''}'`,
         `  P_QTY         = ${item.quantity || '0'}`,
         `  P_SCAN_DATE   = '${scanDate}'`,
+        `  P_LEN         = ${item.length || '0'}`,
         `  P_DATETIME    = '${dateTime}'`,
         `  P_USER        = '${user}'`
       ].join('\n')
@@ -392,6 +457,7 @@ function LocationManagement() {
         `(수신일시: ${new Date().toLocaleString('ko-KR')})`
       ].join('\n')
       if (showOracleRefPanel) setSaveResultText(resultLines)
+      sendEmailIfEnabled(paramsForOracle, resultLines)
 
       if (d.status === 'success') {
         alert('성공적으로 저장되었습니다.')
@@ -418,6 +484,7 @@ function LocationManagement() {
         `(수신일시: ${new Date().toLocaleString('ko-KR')})`
       ].filter(Boolean).join('\n')
       if (showOracleRefPanel) setSaveResultText(resultLines)
+      sendEmailIfEnabled(paramsForOracle, resultLines)
     } finally {
       setSaving(false)
     }
@@ -527,9 +594,7 @@ function LocationManagement() {
         } else {
           setLoadingRackNumber(numberCode)
           // 선택 완료 후 바코드 입력란으로 포커스 이동
-          setTimeout(() => {
-            barcodeInputRef.current?.focus()
-          }, 50)
+          focusBarcodeNoKeyboard()
         }
       } else {
         setRackNumbers([])
@@ -543,10 +608,45 @@ function LocationManagement() {
     }
   }
 
-  const handleOracleRefToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked
+  useEffect(() => {
+    if (!isOptionsOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(e.target as Node)) {
+        setIsOptionsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOptionsOpen])
+
+  const handleOracleRefToggle = (checked: boolean) => {
     setShowOracleRefPanel(checked)
     try { localStorage.setItem('location_show_oracle_ref', String(checked)) } catch { /* ignore */ }
+  }
+
+  const handleEmailForwardToggle = (checked: boolean) => {
+    setEmailForward(checked)
+    try { localStorage.setItem('pda_email_forward', String(checked)) } catch { /* ignore */ }
+  }
+  void handleEmailForwardToggle // 이메일전달 UI 주석 처리 중 — 핸들러는 재활성화 시 사용
+
+  const sendEmailIfEnabled = async (params: string | null, result: string | null) => {
+    if (!emailForward || (!params && !result) || emailSendingRef.current) return
+    emailSendingRef.current = true
+    try {
+      const res = await axios.post('/api/email/send', {
+        paramsText: params || '',
+        resultText: result || '',
+        pageName: '적재위치관리',
+      })
+      if (res.data?.status !== 'success') {
+        alert(`이메일 전송 실패: ${res.data?.message || '알 수 없는 오류'}`)
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || '서버 통신 오류'
+      alert(`이메일 전송 실패: ${msg}`)
+    }
+    emailSendingRef.current = false
   }
 
   const handleCopySaveParams = () => {
@@ -567,18 +667,189 @@ function LocationManagement() {
     <div className="location-management-container">
       <div className="location-header">
         <button className="back-button" onClick={() => navigate('/main')}>
-          BACK
+          ← 뒤로
         </button>
         <h1>적재위치 등록</h1>
-        <label className="location-oracle-ref-check">
-          <input
-            type="checkbox"
-            checked={showOracleRefPanel}
-            onChange={handleOracleRefToggle}
-          />
-          <span>전달용</span>
-        </label>
+        <div className="options-dropdown-wrapper header-options-right" ref={optionsRef}>
+          <button
+            type="button"
+            className="header-options-button"
+            aria-label="옵션"
+            aria-expanded={isOptionsOpen}
+            onClick={() => setIsOptionsOpen(prev => !prev)}
+          >
+            <svg className="options-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          {isOptionsOpen && (
+            <div className="options-dropdown" role="menu">
+              <label className="options-dropdown-item" role="menuitemcheckbox" aria-checked={isDarkMode}>
+                <span className="options-dropdown-item-icon">
+                  {isDarkMode ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="#818cf8" stroke="#818cf8" strokeWidth="0.5"/>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="5" fill="#f59e0b"/>
+                      <line x1="12" y1="1" x2="12" y2="3" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="12" y1="21" x2="12" y2="23" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="1" y1="12" x2="3" y2="12" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="21" y1="12" x2="23" y2="12" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                </span>
+                <span className="options-dropdown-item-label">다크 모드</span>
+                <span className="options-toggle-switch">
+                  <input type="checkbox" checked={isDarkMode} onChange={e => setIsDarkMode(e.target.checked)} aria-label="다크 모드 토글" />
+                  <span className="options-toggle-slider" />
+                </span>
+              </label>
+              <label className="options-dropdown-item" role="menuitemcheckbox" aria-checked={showOracleRefPanel}>
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="14,2 14,8 20,8" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">전달용</span>
+                <span className="options-toggle-switch">
+                  <input type="checkbox" checked={showOracleRefPanel} onChange={e => handleOracleRefToggle(e.target.checked)} aria-label="전달용 토글" />
+                  <span className="options-toggle-slider" />
+                </span>
+              </label>
+              {/* 이메일전달 옵션 - 임시 비활성화 (재활성화 시 style 제거)
+              <label className="options-dropdown-item" role="menuitemcheckbox" aria-checked={emailForward}>
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="4" width="20" height="16" rx="2" stroke="#64748b" strokeWidth="2"/>
+                    <path d="M22 6L12 13L2 6" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">이메일전달</span>
+                <span className="options-toggle-switch">
+                  <input type="checkbox" checked={emailForward} onChange={e => handleEmailForwardToggle(e.target.checked)} aria-label="이메일전달 토글" />
+                  <span className="options-toggle-slider" />
+                </span>
+              </label>
+              */}
+
+              {/* 화면 꺼짐 방지 */}
+              <label className="options-dropdown-item" role="menuitemcheckbox" aria-checked={isWakeLock}>
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="3" width="20" height="14" rx="2" stroke={isWakeLock ? '#22c55e' : '#64748b'} strokeWidth="2"/>
+                    <path d="M8 21h8M12 17v4" stroke={isWakeLock ? '#22c55e' : '#64748b'} strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="12" cy="10" r="2.5" fill={isWakeLock ? '#22c55e' : '#64748b'}/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">화면 꺼짐 방지</span>
+                <span className="options-toggle-switch">
+                  <input type="checkbox" checked={isWakeLock} onChange={e => setIsWakeLock(e.target.checked)} aria-label="화면 꺼짐 방지 토글" />
+                  <span className="options-toggle-slider" />
+                </span>
+              </label>
+
+              {/* 글꼴 크기 */}
+              <div className="options-dropdown-item options-dropdown-item--fontsize" role="group" aria-label="글꼴 크기">
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <text x="2" y="18" fontSize="13" fontWeight="bold" fill="#64748b" fontFamily="sans-serif">A</text>
+                    <text x="11" y="20" fontSize="16" fontWeight="bold" fill="#64748b" fontFamily="sans-serif">A</text>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">글꼴 크기</span>
+                <div className="options-font-size-buttons">
+                  <button type="button" className={`options-font-size-btn${fontSizeLevel === 'small'  ? ' active' : ''}`} onClick={() => setFontSizeLevel('small')}>소</button>
+                  <button type="button" className={`options-font-size-btn${fontSizeLevel === 'medium' ? ' active' : ''}`} onClick={() => setFontSizeLevel('medium')}>중</button>
+                  <button type="button" className={`options-font-size-btn${fontSizeLevel === 'large'  ? ' active' : ''}`} onClick={() => setFontSizeLevel('large')}>대</button>
+                </div>
+              </div>
+
+              {/* 스캔 효과음 */}
+              <label className="options-dropdown-item" role="menuitemcheckbox" aria-checked={isSoundEnabled}>
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill={isSoundEnabled ? '#3b82f6' : 'none'} stroke={isSoundEnabled ? '#3b82f6' : '#64748b'} strokeWidth="2" strokeLinejoin="round"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke={isSoundEnabled ? '#3b82f6' : '#64748b'} strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">스캔 효과음</span>
+                <span className="options-toggle-switch">
+                  <input type="checkbox" checked={isSoundEnabled} onChange={e => { setIsSoundEnabled(e.target.checked); localStorage.setItem('pda_sound_enabled', String(e.target.checked)) }} aria-label="스캔 효과음 토글" />
+                  <span className="options-toggle-slider" />
+                </span>
+              </label>
+
+              {/* 진동 피드백 */}
+              <label className="options-dropdown-item" role="menuitemcheckbox" aria-checked={isVibrationEnabled}>
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="7" y="2" width="10" height="20" rx="2" stroke={isVibrationEnabled ? '#f59e0b' : '#64748b'} strokeWidth="2"/>
+                    <path d="M3 7v10M21 7v10" stroke={isVibrationEnabled ? '#f59e0b' : '#64748b'} strokeWidth="2.5" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">진동 피드백</span>
+                <span className="options-toggle-switch">
+                  <input type="checkbox" checked={isVibrationEnabled} onChange={e => { setIsVibrationEnabled(e.target.checked); localStorage.setItem('pda_vibration_enabled', String(e.target.checked)) }} aria-label="진동 피드백 토글" />
+                  <span className="options-toggle-slider" />
+                </span>
+              </label>
+
+              {/* 스캔 이력 */}
+              <button
+                type="button"
+                className="options-dropdown-item options-dropdown-item--btn"
+                onClick={() => { setShowDashboard(true); setIsOptionsOpen(false) }}
+              >
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="7" height="7" rx="1" stroke="#6366f1" strokeWidth="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1" stroke="#6366f1" strokeWidth="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1" stroke="#6366f1" strokeWidth="2"/>
+                    <path d="M14 14h3v3M17 14h3M14 17v3h3" stroke="#6366f1" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">스캔 이력</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+
+              {/* 저장 이력 */}
+              <button
+                type="button"
+                className="options-dropdown-item options-dropdown-item--btn"
+                onClick={() => { setShowSaveHistory(true); setIsOptionsOpen(false) }}
+              >
+                <span className="options-dropdown-item-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="17,21 17,13 7,13 7,21" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="7,3 7,8 15,8" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="options-dropdown-item-label">저장 이력</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+
+            </div>
+          )}
+        </div>
       </div>
+
+      {showDashboard && (
+        <ScanDashboard isDarkMode={isDarkMode} onClose={() => setShowDashboard(false)} />
+      )}
+
+      {showSaveHistory && (
+        <SaveHistoryModal isDarkMode={isDarkMode} onClose={() => setShowSaveHistory(false)} />
+      )}
       
       {error && (
         <div className="location-error-banner">
@@ -605,7 +876,7 @@ function LocationManagement() {
           <pre className="location-params-text location-result-text">{saveResultText}</pre>
         </div>
       )}
-      
+
       <div className="location-content">
         <div className="input-section">
           <div className="input-group">
@@ -655,10 +926,8 @@ function LocationManagement() {
               onChange={(e) => {
                 setLoadingRackNumber(e.target.value)
                 // 적재대번호 선택 후 바코드 텍스트박스로 포커스 이동
-                if (e.target.value && barcodeInputRef.current) {
-                  setTimeout(() => {
-                    barcodeInputRef.current?.focus()
-                  }, 0)
+                if (e.target.value) {
+                  focusBarcodeNoKeyboard()
                 }
               }}
               disabled={!loadingRackType || loadingRackNumbers}
@@ -690,9 +959,32 @@ function LocationManagement() {
                   }
                 }}
                 placeholder="바코드"
+                inputMode={showBarcodeKeyboard ? 'text' : 'none'}
+                onTouchStart={(e) => { if (!showBarcodeKeyboard) e.preventDefault() }}
+                onBlur={() => {
+                  setShowBarcodeKeyboard(false)
+                  if (barcodeInputRef.current) barcodeInputRef.current.setAttribute('inputmode', 'none')
+                }}
               />
-              {/* PDA/휴대폰에서 손으로 탭해도 키보드가 안 뜨게 막음. 스캐너는 포커스 시 입력 가능 */}
-              <div className="barcode-tap-blocker" aria-hidden="true" />
+              <button
+                type="button"
+                className="barcode-camera-btn"
+                tabIndex={-1}
+                aria-label="직접 입력"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setShowBarcodeKeyboard(true)
+                  if (barcodeInputRef.current) {
+                    barcodeInputRef.current.setAttribute('inputmode', 'text')
+                    barcodeInputRef.current.focus()
+                  }
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-3h10l2 3a2 2 0 0 0 2 2v11z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </button>
             </div>
             <input type="text" className="cnt-input" value={cnt} readOnly placeholder="0" aria-label="건수값" />
             <input type="text" className="cnt-input cnt-sum" value={quantitySum} readOnly placeholder="0" aria-label="본수합계" />
@@ -748,6 +1040,7 @@ function LocationManagement() {
                 <th>시간</th>
                 <th>배치번호</th>
                 <th>자재코드</th>
+                <th>길이</th>
                 <th>본수</th>
                 <th>수주번호</th>
                 <th>행번</th>
@@ -762,6 +1055,7 @@ function LocationManagement() {
                   <td data-label="시간">-</td>
                   <td data-label="배치번호">-</td>
                   <td data-label="자재코드">-</td>
+                  <td data-label="길이">-</td>
                   <td data-label="본수">-</td>
                   <td data-label="수주번호">-</td>
                   <td data-label="행번">-</td>
@@ -780,6 +1074,7 @@ function LocationManagement() {
                     <td data-label="시간">{row.time}</td>
                     <td data-label="배치번호">{row.batchNumber}</td>
                     <td data-label="자재코드">{row.materialCode}</td>
+                    <td data-label="길이">{row.length}</td>
                     <td data-label="본수">{row.quantity}</td>
                     <td data-label="수주번호">{row.orderNumber}</td>
                     <td data-label="행번">{row.orderLine}</td>

@@ -32,6 +32,10 @@ html {
   --touch-min: 44px;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   min-width: 280px;

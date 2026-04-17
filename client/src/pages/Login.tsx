@@ -31,10 +31,24 @@ function Login({ setIsAuthenticated }: LoginProps) {
   }
 
   const handleExit = () => {
-    const savedUser = localStorage.getItem(LAST_USERNAME_KEY)
+    const keysToPreserve = [
+      LAST_USERNAME_KEY,
+      'main_card_order',
+      'darkMode',
+      'pda_wake_lock',
+      'pda_font_size',
+      'pda_sound_enabled',
+      'pda_vibration_enabled',
+      'pda_scan_history',
+    ]
+    const saved: Record<string, string> = {}
+    keysToPreserve.forEach(k => {
+      const v = localStorage.getItem(k)
+      if (v !== null) saved[k] = v
+    })
     localStorage.clear()
     sessionStorage.clear()
-    if (savedUser) localStorage.setItem(LAST_USERNAME_KEY, savedUser)
+    Object.entries(saved).forEach(([k, v]) => localStorage.setItem(k, v))
     setExited(true)
     window.close()
   }

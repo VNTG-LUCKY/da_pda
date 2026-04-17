@@ -1,5 +1,563 @@
 /* App.css - Global styles for PDA application */
 
+/* ============================================================
+   서브 페이지 헤더 우측 옵션 드롭다운 정렬
+   ============================================================ */
+.header-options-right {
+  margin-left: auto;
+  flex-shrink: 0;
+  z-index: 2;
+}
 
+/* ============================================================
+   다크 모드 오버라이드 (html.dark)
+   ============================================================ */
 
+/* ----- 전역 ----- */
+html.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
 
+/* ----- 메인 화면 ----- */
+html.dark .main-container {
+  background: #0f172a;
+}
+
+html.dark .main-title {
+  color: #e2e8f0;
+}
+
+html.dark .function-card {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .function-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .card-icon {
+  background: #334155;
+}
+
+html.dark .card-title {
+  color: #f1f5f9;
+}
+
+html.dark .card-subtitle {
+  color: #94a3b8;
+}
+
+/* 드롭다운 다크 모드 */
+html.dark .options-dropdown {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .options-dropdown-item:hover {
+  background: #334155;
+}
+
+html.dark .options-dropdown-item:active {
+  background: #475569;
+}
+
+html.dark .options-dropdown-item-label {
+  color: #e2e8f0;
+}
+
+html.dark .options-toggle-slider {
+  background: #64748b;
+}
+
+html.dark .options-toggle-slider::before {
+  background: #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 서버 상태 배지 다크 모드 */
+html.dark .options-server-badge--unknown  { background: #334155; color: #64748b; }
+html.dark .options-server-badge--checking { background: #422006; color: #fbbf24; }
+html.dark .options-server-badge--online   { background: #14532d; color: #4ade80; }
+html.dark .options-server-badge--offline  { background: #450a0a; color: #f87171; }
+
+html.dark .options-server-spinner {
+  border-color: #78350f;
+  border-top-color: #fbbf24;
+}
+
+html.dark .options-server-refresh {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+html.dark .options-server-refresh:hover:not(:disabled) {
+  background: #475569;
+  color: #e2e8f0;
+}
+
+/* ============================================================
+   스캔 이력 버튼 아이템 (공통)
+   ============================================================ */
+.options-dropdown-item--btn {
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  padding: 0;
+  border-radius: 0;
+}
+
+.options-dropdown-item--btn:hover {
+  background: #f1f5f9;
+}
+
+html.dark .options-dropdown-item--btn:hover {
+  background: #334155;
+}
+
+/* ============================================================
+   글꼴 크기 선택 버튼 (공통)
+   ============================================================ */
+.options-dropdown-item--fontsize {
+  cursor: default;
+  user-select: none;
+}
+
+.options-font-size-buttons {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.options-font-size-btn {
+  width: 32px;
+  height: 30px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+  padding: 0;
+}
+
+.options-font-size-btn:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.options-font-size-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+html.dark .options-font-size-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+html.dark .options-font-size-btn:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+html.dark .options-font-size-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+/* ----- 로그인 화면 ----- */
+html.dark .login-form {
+  background: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .login-input-group label {
+  color: #cbd5e1;
+}
+
+html.dark .login-input-group input {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+html.dark .login-input-group input:focus {
+  border-color: #60a5fa;
+}
+
+html.dark .login-error {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+html.dark .login-exit-button {
+  background: #334155;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+html.dark .login-exit-button:hover {
+  background: #475569;
+  border-color: #64748b;
+  color: #cbd5e1;
+}
+
+/* ----- Page.css 공통 레이아웃 ----- */
+html.dark .page-container {
+  background: #0f172a;
+}
+
+html.dark .page-header {
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .back-button {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+html.dark .back-button:hover {
+  background: #475569;
+}
+
+html.dark .page-title {
+  color: #f1f5f9;
+}
+
+html.dark .empty-screen {
+  background: #1e293b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .empty-screen p {
+  color: #e2e8f0;
+}
+
+html.dark .empty-message {
+  color: #94a3b8;
+}
+
+/* ----- 적재위치관리 / 스켈프 투입 공통 ----- */
+html.dark .location-management-container,
+html.dark .slitting-input-container {
+  background: #0f172a;
+}
+
+html.dark .location-params-box {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html.dark .location-params-header {
+  background: #0f172a;
+  color: #94a3b8;
+}
+
+html.dark .location-params-text {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+html.dark .location-result-box {
+  background: #1e293b;
+  border-color: #1e4d2b;
+}
+
+html.dark .location-result-header {
+  background: #052e16;
+  color: #86efac;
+}
+
+html.dark .location-error-banner,
+html.dark .slitting-error-banner {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+/* 적재위치관리 라벨/인풋 */
+html.dark .location-management-container .input-group label,
+html.dark .location-management-container .input-group label.label-large {
+  color: #cbd5e1;
+}
+
+html.dark .location-management-container .input-group label.label-red {
+  color: #f87171;
+}
+
+html.dark .location-management-container .input-group input[type="text"],
+html.dark .location-management-container .input-group > input.input-scan {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+html.dark .location-management-container .input-group select {
+  background: #334155 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E") no-repeat right 0.5rem center;
+  border-color: #475569;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+html.dark .location-management-container .input-group input[type="text"]:focus,
+html.dark .location-management-container .input-group > input.input-scan:focus,
+html.dark .location-management-container .input-group select:focus {
+  border-color: #60a5fa;
+}
+
+html.dark .cnt-input,
+html.dark .cnt-input.cnt-sum {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+html.dark .radio-group {
+  background: #3b1a1a;
+}
+
+html.dark .radio-option {
+  color: #e2e8f0;
+}
+
+html.dark .quantity-input {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+html.dark .submit-button {
+  background: #1e293b;
+  color: #60a5fa;
+  border-color: #3b82f6;
+}
+
+html.dark .submit-button:hover {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+html.dark .table-section {
+  background: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .data-table thead {
+  background: #334155;
+}
+
+html.dark .data-table th {
+  color: #cbd5e1;
+  border-bottom-color: #475569;
+}
+
+html.dark .data-table td {
+  border-bottom-color: #334155;
+  color: #94a3b8;
+}
+
+html.dark .data-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.dark .data-table tbody tr.selected-row {
+  background: #1e3a5f;
+  border-left-color: #60a5fa;
+}
+
+html.dark .data-table tbody tr.selected-row:hover {
+  background: #1e3a5f;
+  filter: brightness(1.1);
+}
+
+html.dark .footer-buttons {
+  background: #0f172a;
+}
+
+html.dark .save-button {
+  background: #c2410c;
+}
+
+html.dark .save-button:hover {
+  background: #ea580c;
+}
+
+html.dark .delete-button:disabled {
+  background: #334155;
+  color: #64748b;
+}
+
+/* ----- 상차등록 ----- */
+html.dark .loading-registration-container {
+  background: #0f172a;
+}
+
+html.dark .loading-registration-info-banner {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+html.dark .loading-registration-error-banner {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+/* 송수신 정보 패널 - 다크모드 */
+html.dark .loading-params-box {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: none;
+}
+
+html.dark .loading-params-header {
+  background: #0f172a;
+  color: #94a3b8;
+}
+
+html.dark .loading-result-box {
+  border-color: #1e4d2b;
+}
+
+html.dark .loading-result-header {
+  background: #052e16;
+  color: #86efac;
+}
+
+html.dark .loading-params-copy {
+  background: #334155;
+  color: #cbd5e1;
+}
+
+html.dark .loading-params-copy:hover {
+  background: #475569;
+}
+
+html.dark .loading-params-text {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+html.dark .loading-result-text {
+  color: #bbf7d0;
+}
+
+html.dark .input-section {
+  background: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .input-group label {
+  color: #cbd5e1;
+}
+
+html.dark .input-group label.label-red {
+  color: #f87171;
+}
+
+html.dark .input-group input[type="text"],
+html.dark .input-group input[type="date"] {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+html.dark .input-group select {
+  background: #334155 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E") no-repeat right 0.5rem center;
+  border-color: #475569;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+html.dark .input-group input:focus,
+html.dark .input-group select:focus {
+  border-color: #60a5fa;
+}
+
+html.dark .radio-option label {
+  color: #e2e8f0;
+}
+
+html.dark .quantity-input-wrapper label {
+  color: #cbd5e1;
+}
+
+html.dark .submit-button-inline {
+  background: #1e293b;
+  color: #60a5fa;
+  border-color: #3b82f6;
+}
+
+html.dark .submit-button-inline:hover {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+/* 상차등록 바코드: 적재위치등록 일반 입력과 동일 다크 톤 (단일 실배경 입력 — 다크 토글 반복에도 유지) */
+html.dark .loading-registration-container .loading-barcode-input {
+  background-color: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+}
+html.dark .loading-registration-container .loading-barcode-input::placeholder {
+  color: #64748b;
+}
+html.dark .loading-registration-container .loading-barcode-input:focus {
+  border-color: #60a5fa;
+  outline: none;
+}
+html.dark .loading-registration-container .loading-barcode-camera-btn {
+  color: #94a3b8;
+}
+html.dark .loading-registration-container .loading-barcode-camera-btn:active {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+}
+
+/* 스켈프 투입 바코드: 적재위치등록과 동일 다크 스타일 */
+html.dark .slitting-input-container .input-group.input-group-barcode .barcode-input-wrap .barcode-input,
+html.dark .slitting-input-container .input-row.barcode-shift-row .barcode-input-wrap .barcode-input {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #f1f5f9;
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+}
+html.dark .slitting-input-container .input-group.input-group-barcode .barcode-input-wrap .barcode-input::placeholder,
+html.dark .slitting-input-container .input-row.barcode-shift-row .barcode-input-wrap .barcode-input::placeholder {
+  color: #64748b;
+}
+html.dark .slitting-input-container .input-group.input-group-barcode .barcode-input-wrap .barcode-input:focus,
+html.dark .slitting-input-container .input-row.barcode-shift-row .barcode-input-wrap .barcode-input:focus {
+  border-color: #60a5fa !important;
+  outline: none;
+}
+html.dark .slitting-input-container .input-group.input-group-barcode .camera-btn,
+html.dark .slitting-input-container .input-row.barcode-shift-row .camera-btn {
+  color: #94a3b8;
+}
+html.dark .slitting-input-container .input-group.input-group-barcode .camera-btn:active,
+html.dark .slitting-input-container .input-row.barcode-shift-row .camera-btn:active {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+}

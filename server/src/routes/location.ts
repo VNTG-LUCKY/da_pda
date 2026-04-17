@@ -379,9 +379,10 @@ router.post('/save-scan-data', async (req: Request, res: Response) => {
         console.log('  P_BATCH:', item.batchNumber || '');
         console.log('  P_ITEM_CODE:', item.materialCode || '');
         console.log('  P_CO_NO:', item.orderNumber || '');
-        console.log('  P_CO_SEAL:', item.orderLine || '');
+        console.log('  P_CO_SERL:', item.orderLine || '');
         console.log('  P_QTY:', parseFloat(item.quantity) || 0);
         console.log('  P_SCAN_DATE:', scanDateObj);
+        console.log('  P_LEN:', parseFloat(item.length) || 0);
         console.log('  P_DATETIME:', dateTimeObj);
         console.log('  P_USER:', user);
         console.log('===========================================================\n');
@@ -401,9 +402,10 @@ router.post('/save-scan-data', async (req: Request, res: Response) => {
                 :P_BATCH,
                 :P_ITEM_CODE,
                 :P_CO_NO,
-                :P_CO_SEAL,
+                :P_CO_SERL,
                 :P_QTY,
                 :P_SCAN_DATE,
+                :P_LEN,
                 :P_DATETIME,
                 :P_USER,
                 :P_OUT_YN,
@@ -418,9 +420,10 @@ router.post('/save-scan-data', async (req: Request, res: Response) => {
               P_BATCH: { val: item.batchNumber || '', dir: oracledb.BIND_IN },
               P_ITEM_CODE: { val: item.materialCode || '', dir: oracledb.BIND_IN },
               P_CO_NO: { val: item.orderNumber || '', dir: oracledb.BIND_IN },
-              P_CO_SEAL: { val: item.orderLine || '', dir: oracledb.BIND_IN },
+              P_CO_SERL: { val: item.orderLine || '', dir: oracledb.BIND_IN },
               P_QTY: { val: parseFloat(item.quantity) || 0, dir: oracledb.BIND_IN },
               P_SCAN_DATE: { val: scanDateObj, type: oracledb.DATE, dir: oracledb.BIND_IN },
+              P_LEN: { val: parseFloat(item.length) || 0, dir: oracledb.BIND_IN },
               P_DATETIME: { val: dateTimeObj, type: oracledb.DATE, dir: oracledb.BIND_IN },
               P_USER: { val: user, dir: oracledb.BIND_IN },
               P_OUT_YN: { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 10 },

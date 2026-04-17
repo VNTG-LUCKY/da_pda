@@ -242,6 +242,8 @@
   font-size: 1rem;
   line-height: 1.4;
   background: white;
+  color: #1f2937;
+  color-scheme: light;
   transition: border-color 0.2s;
   min-height: 28px;
   box-sizing: border-box;
@@ -288,17 +290,29 @@
 .location-management-container .input-group.barcode-group.compact-row .barcode-input-inline {
   width: 100%;
   box-sizing: border-box;
+  padding-right: 2rem;
 }
 
-/* 스캔/타이핑 가능하도록 터치 차단 해제 (포커스·키 입력 허용) */
-.barcode-tap-blocker {
+.barcode-camera-btn {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  cursor: default;
-  pointer-events: none;
+  right: 0.3rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.barcode-camera-btn:active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
 }
 
 /* 0(건수), 0(본수합) 칸: 너비 비율 6:2:2 중 2:2 */

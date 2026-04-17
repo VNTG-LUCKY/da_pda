@@ -1,4 +1,4 @@
-/* 슬리팅 투입 - PDA/휴대폰 모바일 기본 (전용 컨테이너로 적재위치등록 CSS와 분리) */
+/* 스켈프 투입 - PDA/휴대폰 모바일 기본 (전용 컨테이너로 적재위치등록 CSS와 분리) */
 .slitting-input-container {
   min-height: 100vh;
   min-height: 100dvh;
@@ -245,6 +245,8 @@
   border-radius: 6px;
   font-size: 16px;
   background: white;
+  color: #1f2937;
+  color-scheme: light;
   transition: border-color 0.2s;
   box-sizing: border-box;
 }
@@ -362,7 +364,7 @@
 .input-row.barcode-shift-row .barcode-input-wrap .barcode-input {
   flex: 1;
   min-width: 0;
-  padding: 0.5rem 0.6rem;
+  padding: 0.5rem 2.25rem 0.5rem 0.6rem;
   min-height: 40px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -389,12 +391,26 @@
   padding-right: 2.25rem;
 }
 
-.camera-icon {
+.camera-btn {
   position: absolute;
-  right: 0.6rem;
-  font-size: 1.1rem;
-  pointer-events: none;
-  user-select: none;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.camera-btn:active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .input-button-section {

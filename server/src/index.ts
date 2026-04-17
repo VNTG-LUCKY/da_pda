@@ -5,6 +5,7 @@ import { initializePool, closePool, executeQuery } from './config/database';
 import locationRoutes from './routes/location';
 import slittingRoutes from './routes/slitting';
 import loadingRoutes from './routes/loading';
+import emailRoutes from './routes/email';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/location', locationRoutes);
 app.use('/api/slitting', slittingRoutes);
 app.use('/api/loading', loadingRoutes);
+app.use('/api/email', emailRoutes);
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
@@ -55,86 +57,12 @@ app.get('/api/db/test', async (req: Request, res: Response) => {
   }
 });
 
-// DB 직접 연결 테스트 엔드포인트 (풀 없이, 여러 형식 시도)
-app.get('/api/db/test-direct', async (req: Request, res: Response) => {
-  const oracledb = require('oracledb');
-  const user = process.env.DB_USER || 'daerp';
-  const password = 'daerp#2018'; // 하드코딩
-  const connectString = process.env.DB_CONNECTION_STRING || '172.17.1.56:1521/DAERP';
-  
-  console.log('Direct connection test:');
-  console.log('  User:', user);
-  console.log('  Password:', password);
-  console.log('  Connect String:', connectString);
-  
-  // 여러 연결 형식 시도
-  const connectionConfigs = [
-    {
-      name: 'Standard format',
-      config: {
-        user: user,
-        password: password,
-        connectString: connectString
-      }
-    },
-    {
-      name: 'Uppercase user',
-      config: {
-        user: user.toUpperCase(),
-        password: password,
-        connectString: connectString
-      }
-    },
-    {
-      name: 'Different connect string format 1',
-      config: {
-        user: user,
-        password: password,
-        connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.17.1.56)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=DAERP)))`
-      }
-    },
-    {
-      name: 'Different connect string format 2',
-      config: {
-        user: user,
-        password: password,
-        connectString: `(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.17.1.56)(PORT=1521))(CONNECT_DATA=(SID=DAERP)))`
-      }
-    }
-  ];
-  
-  for (const testConfig of connectionConfigs) {
-    let connection;
-    try {
-      console.log(`Trying: ${testConfig.name}`);
-      connection = await oracledb.getConnection(testConfig.config);
-      const result = await connection.execute('SELECT SYSDATE FROM DUAL');
-      await connection.close();
-      
-      return res.json({ 
-        status: 'success', 
-        message: `Direct database connection successful using: ${testConfig.name}`,
-        config: testConfig.name,
-        data: result.rows 
-      });
-    } catch (error: any) {
-      if (connection) {
-        try {
-          await connection.close();
-        } catch (closeError) {
-          // ignore
-        }
-      }
-      console.error(`${testConfig.name} failed:`, error.message);
-      // 다음 형식 시도
-    }
-  }
-  
-  // 모든 형식 실패
-  res.status(500).json({ 
-    status: 'error', 
-    message: 'All connection attempts failed',
-    error: 'Could not connect with any connection format'
+// DB 환경 확인 엔드포인트
+app.get('/api/db/env', (req: Request, res: Response) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    DB_CONNECTION_STRING: process.env.DB_CONNECTION_STRING,
+    DB_USER: process.env.DB_USER,
   });
 });
 

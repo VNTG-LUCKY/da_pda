@@ -112,8 +112,11 @@ router.post('/picking-sel', async (req: Request, res: Response) => {
     if (error?.stack) console.error(error.stack);
     return res.status(500).json({
       status: 'error',
+      outYn: 'N',
+      outMsg: errMsg,
       message: 'SP_PDA_PICKING_SEL 호출 실패',
       error: errMsg,
+      data: [],
       ...(errCode != null && { errorCode: errCode })
     });
   }
@@ -151,55 +154,83 @@ router.post('/picking-save', async (req: Request, res: Response) => {
     const connection = await getConnection();
     try {
       for (const row of rows) {
-        const batchNo     = String(row.batchNo    ?? '').trim();
-        const itemCode    = String(row.itemCode   ?? '').trim();
-        const loadType    = 'sa05_lm10';
-        const sendReqNo   = String(row.sendReqNo  ?? '').trim();
-        const sendReqSerl = String(row.sendReqSerl ?? '').trim();
-        const coNo        = String(row.coNo       ?? '').trim();
-        const coSerl      = String(row.coSerl     ?? '').trim();
-        const qty         = String(row.qty        ?? '').trim();
-        const len         = String(row.len        ?? '').trim();
+        const batchNo      = String(row.batchNo     ?? '').trim();
+        const pdaSeq       = Number(row.pdaSeq      ?? 0);
+        const loadIndiSerl = Number(row.loadIndiSerl ?? 0);
+        const itemCode     = String(row.itemCode    ?? '').trim();
+        const loadType     = String(row.loadType    ?? '').trim();
+        const sendReqNo    = String(row.sendReqNo   ?? '').trim();
+        const sendReqSerl  = String(row.sendReqSerl ?? '').trim();
+        const coNo         = String(row.coNo        ?? '').trim();
+        const coSerl       = String(row.coSerl      ?? '').trim();
+        const qty          = Number(row.qty         ?? 0);
+        const pickQty      = Number(row.pickQty     ?? 0);
+        const qtyCheck     = String(row.qtyCheck    ?? 'N').trim().toUpperCase();
+        const len          = Number(row.len         ?? 0);
+        const bdQty        = String(row.bdQty       ?? '').trim();
+        const firstRow     = String(row.firstRow    ?? 'N').trim().toUpperCase();
 
-        console.log(`  행: BATCH=${batchNo}, ITEM=${itemCode}, QTY=${qty}, LEN=${len}, CO_NO=${coNo}, CO_SERL=${coSerl}`);
+        console.log(`  행[PDA_SEQ=${pdaSeq}, LOAD_INDI_SERL=${loadIndiSerl}, LOAD_TYPE=${loadType}]: BATCH=${batchNo}, ITEM=${itemCode}, QTY=${qty}, PICK_QTY=${pickQty}, QTY_CHECK=${qtyCheck}, LEN=${len}`);
 
         try {
           const result = await connection.execute(
             `BEGIN
               SP_PDA_PICKING_SAVE(
-                :1, :2, :3, :4, :5,
-                :6, :7, :8, :9, :10,
-                :11, :12, :13, :14, :15,
-                :16, :17
+                p_busi_place    => :p_busi_place,
+                p_end_yn        => :p_end_yn,
+                p_scan_date     => :p_scan_date,
+                p_load_indi_no  => :p_load_indi_no,
+                p_load_indi_serl => :p_load_indi_serl,
+                p_pda_seq       => :p_pda_seq,
+                p_batch_no      => :p_batch_no,
+                p_item_code     => :p_item_code,
+                p_load_type     => :p_load_type,
+                p_send_req_no   => :p_send_req_no,
+                p_send_req_serl => :p_send_req_serl,
+                p_co_no         => :p_co_no,
+                p_co_serl       => :p_co_serl,
+                p_qty           => :p_qty,
+                p_pick_qty      => :p_pick_qty,
+                p_qty_check     => :p_qty_check,
+                p_car_no        => :p_car_no,
+                p_len           => :p_len,
+                p_bd_qty        => :p_bd_qty,
+                p_first_row     => :p_first_row,
+                p_user          => :p_user,
+                o_out_yn        => :o_out_yn,
+                o_out_msg       => :o_out_msg
               );
             END;`,
-            [
-              '1',           // 1  P_BUSI_PLACE
-              endYnStr,      // 2  P_END_YN
-              scanDateStr,   // 3  P_SCAN_DATE
-              loadIndiNoStr, // 4  P_LOAD_INDI_NO
-              batchNo,       // 5  P_BATCH_NO
-              itemCode,      // 6  P_ITEM_CODE
-              loadType,      // 7  P_LOAD_TYPE
-              sendReqNo,     // 8  P_SEND_REQ_NO
-              sendReqSerl,   // 9  P_SEND_REQ_SERL
-              coNo,          // 10 P_CO_NO
-              coSerl,        // 11 P_CO_SERL
-              qty,           // 12 P_QTY
-              carNoStr,      // 13 P_CAR_NO
-              len,           // 14 P_LEN
-              userStr,       // 15 P_USER
-              { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 10 },   // 16 O_OUT_YN
-              { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 2000 }  // 17 O_OUT_MSG
-            ]
+            {
+              p_busi_place:     '1',
+              p_end_yn:         endYnStr,
+              p_scan_date:      scanDateStr,
+              p_load_indi_no:   loadIndiNoStr,
+              p_load_indi_serl: loadIndiSerl,
+              p_pda_seq:        pdaSeq,
+              p_batch_no:       batchNo,
+              p_item_code:      itemCode,
+              p_load_type:      loadType,
+              p_send_req_no:    sendReqNo,
+              p_send_req_serl:  sendReqSerl,
+              p_co_no:          coNo,
+              p_co_serl:        coSerl,
+              p_qty:            qty,
+              p_pick_qty:       pickQty,
+              p_qty_check:      qtyCheck,
+              p_car_no:         carNoStr,
+              p_len:            len,
+              p_bd_qty:         bdQty,
+              p_first_row:      firstRow,
+              p_user:           userStr,
+              o_out_yn:  { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 10 },
+              o_out_msg: { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 2000 }
+            }
           );
 
-          const outBinds    = result.outBinds as any[];
-          const outBindsLen = outBinds?.length ?? 0;
-          const outYnRaw    = outBindsLen === 2 ? outBinds[0] : outBinds[15];
-          const outMsgRaw   = outBindsLen === 2 ? outBinds[1] : outBinds[16];
-          const outYn  = String(outYnRaw  ?? '').trim().toUpperCase();
-          const outMsg = String(outMsgRaw ?? '').trim();
+          const outBinds = result.outBinds as any;
+          const outYn  = String(outBinds?.o_out_yn  ?? '').trim().toUpperCase();
+          const outMsg = String(outBinds?.o_out_msg ?? '').trim();
 
           console.log(`  결과: O_OUT_YN=${outYn}, O_OUT_MSG=${outMsg}`);
 

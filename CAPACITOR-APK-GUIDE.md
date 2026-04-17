@@ -199,6 +199,19 @@ npx cap sync android
 
 여기까지 하면 **APK를 만들 준비**가 끝난 상태입니다.
 
+### 런처 아이콘(홈 화면 단축아이콘)
+
+APK 설치 시 보이는 **앱 아이콘**은 아래를 수정합니다.
+
+| 바꿀 내용 | 파일 |
+|-----------|------|
+| **PDA 모양·스캔선 등 (Android 8+)** | `client/android/app/src/main/res/drawable/ic_launcher_foreground.xml` |
+| **아이콘 배경색** | `client/android/app/src/main/res/values/ic_launcher_background.xml` |
+| **구형 기기용 PNG** | `client`에서 `npm run android:icons` 실행 → `mipmap-mdpi` ~ `mipmap-xxxhdpi`의 `ic_launcher.png`, `ic_launcher_round.png` 자동 생성 |
+
+**상세·전체 빌드 순서**는 **`client/android/ANDROID-LAUNCHER-ICONS.md`** 를 보세요.  
+요약 순서: `client`에서 **`npm run android:icons`** (PNG 필요 시) → **`npm run build`** → **`npx cap sync android`** → Android Studio에서 APK 빌드.
+
 ---
 
 ## 6. 5단계: Android Studio에서 APK 빌드

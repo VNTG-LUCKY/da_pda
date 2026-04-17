@@ -60,6 +60,14 @@
   box-sizing: border-box;
 }
 
+.loading-registration-info-banner {
+  padding: 0.5rem 0.75rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  text-align: center;
+  font-size: 0.8125rem;
+}
+
 .loading-registration-error-banner {
   padding: 0.5rem 0.75rem;
   background: #fee2e2;
@@ -91,10 +99,11 @@
 /* 송수신 정보 패널 */
 .loading-params-box {
   margin: 0.4rem 0.75rem;
-  background: #1e293b;
+  background: #ffffff;
   border-radius: 8px;
-  border: 1px solid #334155;
+  border: 1px solid #cbd5e1;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .loading-params-header {
@@ -102,26 +111,26 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.4rem 0.75rem;
-  background: #0f172a;
+  background: #e0f2fe;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: #0369a1;
   font-weight: 500;
 }
 
 .loading-result-box {
-  border-color: #1e4d2b;
+  border-color: #a7f3d0;
 }
 
 .loading-result-header {
-  background: #052e16;
-  color: #86efac;
+  background: #d1fae5;
+  color: #047857;
 }
 
 .loading-params-copy {
-  background: #334155;
+  background: #0ea5e9;
   border: none;
   border-radius: 4px;
-  color: #cbd5e1;
+  color: #ffffff;
   font-size: 0.7rem;
   padding: 0.2rem 0.5rem;
   cursor: pointer;
@@ -129,13 +138,14 @@
 }
 
 .loading-params-copy:hover {
-  background: #475569;
+  background: #0284c7;
 }
 
 .loading-params-text {
   padding: 0.5rem 0.75rem;
   font-size: 0.7rem;
-  color: #e2e8f0;
+  color: #334155;
+  background: #f8fafc;
   white-space: pre-wrap;
   word-break: break-all;
   margin: 0;
@@ -144,7 +154,7 @@
 }
 
 .loading-result-text {
-  color: #bbf7d0;
+  color: #047857;
 }
 
 .loading-registration-content {
@@ -249,6 +259,8 @@
   border-radius: 6px;
   font-size: 16px;
   background: white;
+  color: #1f2937;
+  color-scheme: light;
   transition: border-color 0.2s;
   box-sizing: border-box;
 }
@@ -259,15 +271,55 @@
   border-color: #3b82f6;
 }
 
-/* 바코드 입력: 바깥쪽 네모(테두리) 제거 */
-.input-group .barcode-input-wrap .barcode-input {
-  border: none;
-  background: transparent;
-  box-shadow: none;
+/* 바코드: 적재위치등록과 동일 — 입력칸 단일 박스(실배경). 투명 입력은 color-scheme 토글 후 양끝 흰색 잔상 발생 */
+.loading-registration-container .input-group.loading-barcode-row {
+  min-width: 0;
 }
-.input-group .barcode-input-wrap .barcode-input:focus {
+.loading-registration-container .loading-barcode-wrapper {
+  position: relative;
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+}
+.loading-registration-container .loading-barcode-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 2.25rem 0.45rem 0.55rem;
+  height: 40px;
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 16px;
+  background: #ffffff;
+  color: #1f2937;
+  color-scheme: light;
+  transition: border-color 0.2s;
+}
+.loading-registration-container .loading-barcode-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+.loading-registration-container .loading-barcode-camera-btn {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
   border: none;
-  box-shadow: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.loading-registration-container .loading-barcode-camera-btn:active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .input-with-icon {
@@ -289,12 +341,26 @@
   box-sizing: border-box;
 }
 
-.camera-icon {
+.camera-btn {
   position: absolute;
-  right: 0.6rem;
-  font-size: 1.1rem;
-  pointer-events: none;
-  user-select: none;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  border-radius: 4px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.camera-btn:active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .radio-group {
@@ -429,6 +495,11 @@
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* 순번·품목코드 열 임시 숨김 — 데이터/로직 무관 */
+.col-hidden {
+  display: none;
 }
 
 .loading-complete-cell {

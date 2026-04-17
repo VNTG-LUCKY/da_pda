@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- 동아스틸 PDA 런처 배경 (적응형 아이콘 하단 레이어) -->
+    <color name="ic_launcher_background">#1E4A6E</color>
 </resources>
